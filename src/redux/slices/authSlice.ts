@@ -6,7 +6,7 @@ interface User {
   firstName: string
   lastName: string
   avatar?: string
-  role: 'super-admin' | 'admin' | 'employee'  // 3 roles only
+  role: 'super-admin'
   businessId?: string
   businessName?: string
 }

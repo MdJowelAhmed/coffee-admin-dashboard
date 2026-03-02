@@ -17,7 +17,7 @@ export const addBusinessIdToMockData = <T extends Record<string, any>>(
 };
 
 /**
- * Filter data based on user role and business ID
+ * Single-role filtering: super-admin sees all.
  */
 export const filterDataByRole = <T extends Record<string, any>>(
   data: T[],
@@ -25,18 +25,10 @@ export const filterDataByRole = <T extends Record<string, any>>(
   userBusinessId?: string,
   businessIdField: string = 'businessId'
 ): T[] => {
-  // Admin sees all data
-  if (userRole === UserRole.ADMIN) {
-    return data;
-  }
-
-  // Business users see only their data
-  if (userRole === UserRole.EMPLOYEE && userBusinessId) {
-    return data.filter((item) => item[businessIdField] === userBusinessId);
-  }
-
-  return [];
-};
+  if (userRole === UserRole.SUPER_ADMIN) return data
+  if (userBusinessId) return data.filter((item) => item[businessIdField] === userBusinessId)
+  return []
+}
 
 /**
  * Check if user can access a specific item
@@ -47,24 +39,18 @@ export const canAccessItem = (
   userBusinessId?: string,
   businessIdField: string = 'businessId'
 ): boolean => {
-  if (userRole === UserRole.ADMIN) return true;
-  
-  if (userRole === UserRole.EMPLOYEE && userBusinessId) {
-    return item[businessIdField] === userBusinessId;
-  }
-
-  return false;
-};
+  if (userRole === UserRole.SUPER_ADMIN) return true
+  if (userBusinessId) return item[businessIdField] === userBusinessId
+  return false
+}
 
 /**
  * Get role badge color
  */
 export const getRoleBadgeColor = (role: string): string => {
   switch (role) {
-    case UserRole.ADMIN:
+    case UserRole.SUPER_ADMIN:
       return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200';
-    case UserRole.EMPLOYEE:
-      return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200';
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200';
   }
@@ -75,10 +61,8 @@ export const getRoleBadgeColor = (role: string): string => {
  */
 export const getRoleDisplayName = (role: string): string => {
   switch (role) {
-    case UserRole.ADMIN:
-      return 'Administrator';
-    case UserRole.EMPLOYEE:
-      return 'Business User';
+    case UserRole.SUPER_ADMIN:
+      return 'Super Admin';
     default:
       return 'Unknown Role';
   }

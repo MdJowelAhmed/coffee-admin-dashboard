@@ -3,8 +3,7 @@ import { UserRole } from '@/types/roles'
 import { Car } from '@/types'
 
 /**
- * Selector to get cars filtered by user role
- * Admin sees all cars, Business users see only their cars
+ * Single-role selector: only super-admin has access.
  */
 export const selectRoleBasedCars = (state: RootState): Car[] => {
   const { user } = state.auth
@@ -12,14 +11,8 @@ export const selectRoleBasedCars = (state: RootState): Car[] => {
 
   if (!user) return []
 
-  // Admin sees all cars
-  if (user.role === UserRole.ADMIN) {
+  if (user.role === UserRole.SUPER_ADMIN) {
     return filteredList
-  }
-
-  // Business users see only their cars
-  if (user.role === UserRole.EMPLOYEE && user.businessId) {
-    return filteredList.filter((car) => car.businessId === user.businessId)
   }
 
   return []
@@ -53,20 +46,12 @@ export const selectRoleBasedTotalPages = (state: RootState): number => {
 }
 
 /**
- * Check if user can modify a specific item
+ * Single-role permission: only super-admin can modify.
  */
-export const selectCanModifyItem = (state: RootState, itemBusinessId?: string): boolean => {
+export const selectCanModifyItem = (state: RootState, _itemBusinessId?: string): boolean => {
   const { user } = state.auth
 
   if (!user) return false
 
-  // Admin can modify everything
-  if (user.role === UserRole.ADMIN) return true
-
-  // Business users can only modify their own items
-  if (user.role === UserRole.EMPLOYEE && user.businessId) {
-    return itemBusinessId === user.businessId
-  }
-
-  return false
+  return user.role === UserRole.SUPER_ADMIN
 }

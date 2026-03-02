@@ -131,7 +131,7 @@ export function Header() {
                     {user ? `${user.firstName} ${user.lastName}` : 'Admin User'}
                   </p>
                   <p className="text-xs text-muted-foreground">
-                    {user?.email || 'admin@example.com'}
+                    {user?.email || 'superadmin@example.com'}
                   </p>
                 </div>
               </DropdownMenuLabel>
