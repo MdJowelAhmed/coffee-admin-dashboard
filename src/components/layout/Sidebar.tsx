@@ -11,6 +11,7 @@ import {
   Lock,
   FileText,
   Shield,
+  ShieldCheck,
   ShoppingBag,
   Building,
   Calendar,
@@ -113,6 +114,11 @@ const navItems: NavItem[] = [
     title: 'Push Notification',
     href: '/push-notification',
     icon: Bell,
+  },
+  {
+    title: 'Controllers',
+    href: '/controllers',
+    icon: ShieldCheck,
   },
 ]
 

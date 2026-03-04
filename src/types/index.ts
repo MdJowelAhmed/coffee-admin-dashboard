@@ -608,3 +608,27 @@ export interface ShopProduct {
   createdAt: string
   updatedAt: string
 }
+
+// ==================== Super Admin Controller Types ====================
+export type ControllerRole = 'admin' | 'marketing'
+
+export interface Controller {
+  id: string
+  name: string
+  email: string
+  phone: string
+  role: ControllerRole
+  shopId?: string
+  shopName?: string
+  createdAt: string
+  updatedAt: string
+}
+
+export interface ControllerFormData {
+  name: string
+  email: string
+  phone: string
+  password: string
+  role: ControllerRole
+  shopId?: string
+}

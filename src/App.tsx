@@ -36,6 +36,7 @@ import ShopList from './pages/ShopManagement/Shop/ShopList'
 import ShopProducts from './pages/ShopManagement/Products/ShopProducts'
 import SubscriberList from './pages/Subscribers/SubscriberList'
 import PushNotificationList from './pages/PushNotification/PushNotificationList'
+import ControllerList from './pages/Controllers/ControllerList'
 
 function AppEntryRedirect() {
   const { user } = useAppSelector((state) => state.auth)
@@ -100,6 +101,12 @@ function App() {
           <Route 
             path="push-notification" 
             element={<PushNotificationList />}
+          />
+
+          {/* Controllers - Super Admin Only */}
+          <Route 
+            path="controllers" 
+            element={<ControllerList />}
           />
           <Route 
             path="users/:id" 
