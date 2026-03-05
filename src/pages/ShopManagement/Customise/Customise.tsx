@@ -134,7 +134,7 @@ function SyrupTypeTable({
                 <td className="px-6 py-4 font-medium">{s.name}</td>
                 <td className="px-6 py-4">{formatCurrency(s.price)}</td>
                 <td className="px-6 py-4">
-                  <span className="rounded-full bg-purple-100 px-3 py-1 text-xs font-medium text-purple-800">
+                  <span className="rounded-sm bg-secondary-foreground px-3 py-2 text-xs font-medium text-accent">
                     syrup
                   </span>
                 </td>
@@ -265,15 +265,8 @@ export default function Customise() {
       className="space-y-6"
     >
       <Card className="bg-white border-0 shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-xl font-bold text-slate-800">
-            Customise
-          </CardTitle>
-          <p className="text-sm text-muted-foreground">
-            Manage milk and syrup options for your shop.
-          </p>
-        </CardHeader>
-        <CardContent>
+    
+        <CardContent className="pt-6">
           <Tabs defaultValue="milk" className="w-full">
             <TabsList className="mb-4">
               <TabsTrigger value="milk">Milk Type</TabsTrigger>
@@ -281,7 +274,7 @@ export default function Customise() {
             </TabsList>
             <TabsContent value="milk" className="mt-4 space-y-4">
               <div className="flex justify-end">
-                <Button onClick={handleAddMilk} className="bg-primary text-white">
+                <Button onClick={handleAddMilk} className="bg-secondary text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Milk Type
                 </Button>
@@ -301,9 +294,9 @@ export default function Customise() {
                 onItemsPerPageChange={handleMilkLimitChange}
               />
             </TabsContent>
-            <TabsContent value="syrup" className="mt-4 space-y-4">
+            <TabsContent value="syrup" className=" space-y-4">
               <div className="flex justify-end">
-                <Button onClick={handleAddSyrup} className="bg-primary text-white">
+                <Button onClick={handleAddSyrup} className="bg-secondary text-white">
                   <Plus className="h-4 w-4 mr-2" />
                   Add Syrup Type
                 </Button>
