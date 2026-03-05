@@ -162,9 +162,9 @@ export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
         )}
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          <Button type="button" variant="outline" onClick={onClose}>
+          {/* <Button type="button" variant="outline" onClick={onClose}>
             Cancel
-          </Button>
+          </Button> */}
           <Button type="submit" disabled={isSubmitting}>
             {isSubmitting ? 'Adding...' : 'Add Controller'}
           </Button>

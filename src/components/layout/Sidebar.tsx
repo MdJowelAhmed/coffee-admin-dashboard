@@ -149,11 +149,11 @@ const settingsItems: NavItem[] = [
     href: '/settings/privacy',
     icon: Shield,
   },
-  {
-    title: 'FAQ',
-    href: '/settings/faq',
-    icon: HelpCircle,
-  },
+  // {
+  //   title: 'FAQ',
+  //   href: '/settings/faq',
+  //   icon: HelpCircle,
+  // },
 ]
 
 export function Sidebar() {
