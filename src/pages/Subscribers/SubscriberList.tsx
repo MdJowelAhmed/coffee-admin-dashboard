@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Pagination } from '@/components/common/Pagination'
 import { SubscriberTable } from './components/SubscriberTable'
-import { SubscriberFilterDropdown } from './components/SubscriberFilterDropdown'
 import { WriteMailModal } from './components/WriteMailModal'
 import { useAppDispatch, useAppSelector } from '@/redux/hooks'
 import {
@@ -23,7 +22,7 @@ export default function SubscriberList() {
   const [showWriteMail, setShowWriteMail] = useState(false)
 
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
-  const [statusFilter, setStatusFilter] = useUrlString('status', 'all')
+  const [statusFilter] = useUrlString('status', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 

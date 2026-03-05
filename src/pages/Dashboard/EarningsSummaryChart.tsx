@@ -66,6 +66,7 @@ const strKFormatter = (num: number) => {
     return num.toString()
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 const CustomTooltip = ({ active, payload }: any) => {
     if (active && payload && payload.length) {
         return (

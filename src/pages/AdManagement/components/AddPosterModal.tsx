@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/redux/hooks'
 import { addPoster } from '@/redux/slices/adSlice'
 import type { Poster } from '@/types'
-import { toast } from '@/utils/toast'
+import { sonnerToast } from '@/utils/toast'
 
 const posterSchema = z.object({
   title: z.string().min(1, 'Title is required'),
@@ -54,7 +54,7 @@ export function AddPosterModal({ open, onClose }: AddPosterModalProps) {
 
   const onSubmit = async (data: PosterFormData) => {
     if (!imageFile) {
-      toast.error('Please upload an image')
+      sonnerToast.error('Please upload an image')
       return
     }
     setIsSubmitting(true)
@@ -68,10 +68,10 @@ export function AddPosterModal({ open, onClose }: AddPosterModalProps) {
         createdAt: new Date().toISOString(),
       }
       dispatch(addPoster(poster))
-      toast.success('Poster added successfully')
+      sonnerToast.success('Poster added successfully')
       onClose()
     } catch {
-      toast.error('Failed to add poster')
+      sonnerToast.error('Failed to add poster')
     } finally {
       setIsSubmitting(false)
     }

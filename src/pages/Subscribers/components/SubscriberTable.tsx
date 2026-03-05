@@ -1,7 +1,5 @@
 import { motion } from 'framer-motion'
-import { Lock } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { Button } from '@/components/ui/button'
 import { formatDate, getInitials } from '@/utils/formatters'
 import type { Subscriber } from '@/types'
 
@@ -12,7 +10,7 @@ interface SubscriberTableProps {
 
 export function SubscriberTable({
   subscribers,
-  onLock,
+  onLock: _onLock,
 }: SubscriberTableProps) {
   return (
     <div className="w-full overflow-auto">
