@@ -19,13 +19,15 @@ export const generateYearData = (year: number) => {
 }
 
 export const yearlyData: Record<string, ReturnType<typeof generateYearData>> = {
+    '2026': generateYearData(2026),
+    '2025': generateYearData(2025),
     '2024': generateYearData(2024),
     '2023': generateYearData(2023),
     '2022': generateYearData(2022),
     '2021': generateYearData(2021),
 }
 
-export const years = ['2024', '2023', '2022', '2021']
+export const years = ['2026', '2025', '2024', '2023', '2022', '2021']
 
 export const recentOrdersData = [
     {

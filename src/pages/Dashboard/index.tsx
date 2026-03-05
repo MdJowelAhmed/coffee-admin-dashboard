@@ -10,7 +10,7 @@ import { PieChartComponent } from './PieChart'
 // import { TotalRevenue } from '@/components/common/svg/DashboardSVG'
 
 export default function Dashboard() {
-  const [selectedYear, setSelectedYear] = useState('2024')
+  const [selectedYear, setSelectedYear] = useState('2026')
 
   const chartData = useMemo(() => yearlyData[selectedYear], [selectedYear])
 
