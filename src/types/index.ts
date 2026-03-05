@@ -588,6 +588,7 @@ export interface Shop {
   location: string
   openTime: string
   closeTime: string
+  offDay?: string
   aboutShop: string
   shopPicture?: string
   isActive: boolean

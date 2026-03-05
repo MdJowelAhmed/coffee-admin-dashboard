@@ -1,13 +1,23 @@
 import { useEffect, useState } from 'react'
-import { useForm } from 'react-hook-form'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ModalWrapper, FormInput, FormTextarea, ImageUploader } from '@/components/common'
+import { ModalWrapper, FormInput, FormTextarea, FormSelect, ImageUploader } from '@/components/common'
 import { Button } from '@/components/ui/button'
 import { useAppDispatch } from '@/redux/hooks'
 import { addShop, updateShop } from '@/redux/slices/shopSlice'
 import type { Shop } from '@/types'
 import { toast } from '@/utils/toast'
+
+const OFF_DAY_OPTIONS = [
+  { value: 'Sunday', label: 'Sunday' },
+  { value: 'Monday', label: 'Monday' },
+  { value: 'Tuesday', label: 'Tuesday' },
+  { value: 'Wednesday', label: 'Wednesday' },
+  { value: 'Thursday', label: 'Thursday' },
+  { value: 'Friday', label: 'Friday' },
+  { value: 'Saturday', label: 'Saturday' },
+]
 
 const schema = z.object({
   shopName: z.string().min(1, 'Shop name is required'),
@@ -15,6 +25,7 @@ const schema = z.object({
   location: z.string().min(1, 'Location is required'),
   openTime: z.string().min(1, 'Open time is required'),
   closeTime: z.string().min(1, 'Close time is required'),
+  offDay: z.string().optional(),
   aboutShop: z.string().min(1, 'About shop is required'),
 })
 
@@ -37,7 +48,7 @@ export function AddEditShopModal({
   const isEdit = !!editingId
   const [image, setImage] = useState<File | string | null>(null)
 
-  const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const { register, handleSubmit, reset, control, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
       shopName: '',
@@ -45,6 +56,7 @@ export function AddEditShopModal({
       location: '',
       openTime: '09:00',
       closeTime: '18:00',
+      offDay: '',
       aboutShop: '',
     },
   })
@@ -58,6 +70,7 @@ export function AddEditShopModal({
           location: shop.location,
           openTime: shop.openTime,
           closeTime: shop.closeTime,
+          offDay: shop.offDay || '',
           aboutShop: shop.aboutShop,
         })
         setImage(shop.shopPicture || null)
@@ -68,6 +81,7 @@ export function AddEditShopModal({
           location: '',
           openTime: '09:00',
           closeTime: '18:00',
+          offDay: '',
           aboutShop: '',
         })
         setImage(null)
@@ -87,6 +101,7 @@ export function AddEditShopModal({
       location: data.location,
       openTime: data.openTime,
       closeTime: data.closeTime,
+      offDay: data.offDay || undefined,
       aboutShop: data.aboutShop,
       shopPicture: picture,
       isActive: isEdit && shop ? shop.isActive : true,
@@ -153,6 +168,20 @@ export function AddEditShopModal({
             {...register('closeTime')}
           />
         </div>
+
+        <Controller
+          name="offDay"
+          control={control}
+          render={({ field }) => (
+            <FormSelect
+              label="Off Day"
+              value={field.value || ''}
+              options={OFF_DAY_OPTIONS}
+              onChange={field.onChange}
+              placeholder="Select off day (optional)"
+            />
+          )}
+        />
 
         <FormTextarea
           label="About Shop"

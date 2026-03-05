@@ -73,6 +73,7 @@ export function AddEditShopCategoryModal({
       onClose={onClose}
       title={isEdit ? 'Edit Category' : 'Add Category'}
       size="md"
+      className="bg-white"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
         <FormInput
@@ -91,8 +92,8 @@ export function AddEditShopCategoryModal({
           {...register('shortDescription')}
         />
         <div className="flex justify-end gap-3 pt-4">
-          <Button type="button" variant="outline" onClick={onClose}>Cancel</Button>
-          <Button type="submit" disabled={isSubmitting}>{isEdit ? 'Save' : 'Add'}</Button>
+          {/* <Button type="button" variant="outline" onClick={onClose}>Cancel</Button> */}
+          <Button type="submit" disabled={isSubmitting}>{isEdit ? 'Saving...' : 'Add Category'}</Button>
         </div>
       </form>
     </ModalWrapper>

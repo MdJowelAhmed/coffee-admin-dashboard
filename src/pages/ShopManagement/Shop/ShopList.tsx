@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Phone, Clock, Plus } from 'lucide-react'
+import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -64,6 +64,12 @@ function ShopCard({
             {shop.openTime} - {shop.closeTime}
           </span>
         </div>
+        {shop.offDay && (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <CalendarOff className="h-4 w-4 flex-shrink-0" />
+            <span>Off: {shop.offDay}</span>
+          </div>
+        )}
         <p className="text-sm text-muted-foreground line-clamp-2 mt-2">
           {shop.aboutShop}
         </p>
