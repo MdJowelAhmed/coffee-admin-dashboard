@@ -13,6 +13,7 @@ import {
     Tooltip,
     ResponsiveContainer,
 } from 'recharts'
+import { motion } from 'framer-motion'
 
 const rentStatusData = [
     { name: 'Running', value: 45, color: '#06B6D4' },
@@ -22,7 +23,11 @@ const rentStatusData = [
 
 export function PieChartComponent() {
     return (
-        <div className="">
+        <motion.div  
+        initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.4 }}
+        className="">
             <Card>
                 <CardHeader>
                     <div className="flex items- justify-between">
@@ -163,6 +168,6 @@ export function PieChartComponent() {
                     </div>
                 </CardContent>
             </Card>
-        </div>
+        </motion.div>
     )
 }

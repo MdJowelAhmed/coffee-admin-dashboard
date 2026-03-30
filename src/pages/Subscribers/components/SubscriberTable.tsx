@@ -16,7 +16,7 @@ export function SubscriberTable({
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[700px]">
         <thead>
-          <tr className="bg-amber-100/80 text-slate-800">
+          <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">
               User Name
             </th>

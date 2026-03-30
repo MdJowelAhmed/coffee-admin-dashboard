@@ -16,7 +16,7 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[800px]">
         <thead>
-          <tr className="bg-[#E2FBFB] text-slate-800">
+          <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">User Name</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Phone</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Email</th>

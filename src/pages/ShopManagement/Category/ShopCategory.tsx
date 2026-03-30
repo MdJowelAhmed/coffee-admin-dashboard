@@ -27,7 +27,7 @@ function ShopCategoryTable({
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[500px]">
         <thead>
-          <tr className="bg-[#E2FBFB] text-slate-800">
+          <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Short Description</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Status</th>

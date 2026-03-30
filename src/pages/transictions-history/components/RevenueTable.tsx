@@ -24,7 +24,7 @@ export function RevenueTable({ transactions }: RevenueTableProps) {
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[800px]">
         <thead>
-          <tr className="bg-[#f5f0e8] text-slate-800">
+          <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">ID</th>
             <th className="px-6 py-4 text-left text-sm font-bold">
               Date & Time

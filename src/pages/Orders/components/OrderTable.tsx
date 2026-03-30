@@ -37,7 +37,7 @@ export function OrderTable({ orders, onView, onDelete }: OrderTableProps) {
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[900px]">
         <thead>
-          <tr className="bg-[#E2FBFB] text-slate-800">
+          <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">S.N</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Items</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Title</th>
