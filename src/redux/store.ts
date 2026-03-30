@@ -21,9 +21,11 @@ import subscriberReducer from './slices/subscriberSlice'
 import pushNotificationReducer from './slices/pushNotificationSlice'
 import controllerReducer from './slices/controllerSlice'
 import adReducer from './slices/adSlice'
+import { baseApi } from './baseApi'
 
 export const store = configureStore({
   reducer: {
+    [baseApi.reducerPath]: baseApi.reducer,
     auth: authReducer,
     users: userReducer,
     products: productReducer,
@@ -50,7 +52,7 @@ export const store = configureStore({
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
       serializableCheck: false,
-    }),
+    }).concat(baseApi.middleware),
 })
 
 export type RootState = ReturnType<typeof store.getState>

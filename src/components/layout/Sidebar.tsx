@@ -1,6 +1,6 @@
 import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { UserRole, hasFeatureAccess, type FeatureKey } from '@/types/roles'
+import { hasFeatureAccess, type FeatureKey } from '@/types/roles'
 import {
   LayoutDashboard,
   Users,
@@ -164,7 +164,7 @@ const settingsItems: NavItem[] = [
   // },
 ]
 
-function filterNavByRole(items: NavItem[], userRole: UserRole): NavItem[] {
+function filterNavByRole(items: NavItem[], userRole: string): NavItem[] {
   return items
     .map((item) => {
       if (!item.children) {
@@ -192,7 +192,7 @@ export function Sidebar() {
   const { user } = useAppSelector((state) => state.auth)
   const location = useLocation()
 
-  const userRole = (user?.role as UserRole) ?? UserRole.SUPER_ADMIN
+  const userRole = user?.role ?? ''
   const filteredNavItems = filterNavByRole(navItems, userRole)
   const filteredSettingsItems = filterNavByRole(settingsItems, userRole)
 

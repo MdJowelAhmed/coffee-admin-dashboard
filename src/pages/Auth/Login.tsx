@@ -13,10 +13,17 @@ import {
   loginStart,
   loginSuccess,
   loginFailure,
+  setAuthToken,
+  logout,
 } from "@/redux/slices/authSlice";
-import type { UserRoleValue } from "@/redux/slices/authSlice";
+import { useLoginMutation, useLazyGetMyProfileQuery } from "@/redux/api/authApi";
+import { isDashboardAccessRole, normalizeApiRole } from "@/types/roles";
+import { profileDataToAuthUser } from "@/utils/profileToUser";
+import { readJwtPayload } from "@/utils/jwtPayload";
+import type { User } from "@/redux/slices/authSlice";
 import { cn } from "@/utils/cn";
 import { motion } from "framer-motion";
+import { FetchBaseQueryError } from "@reduxjs/toolkit/query";
 
 const loginSchema = z.object({
   email: z.string().email("Please enter a valid email"),
@@ -27,11 +34,43 @@ const loginSchema = z.object({
 type LoginFormData = z.infer<typeof loginSchema>;
 
 
+function getErrorMessage(err: unknown): string {
+  if (typeof err === "object" && err !== null && "data" in err) {
+    const data = (err as FetchBaseQueryError).data;
+    if (data && typeof data === "object" && "message" in data) {
+      const msg = (data as { message?: unknown }).message;
+      if (typeof msg === "string") return msg;
+    }
+  }
+  if (err instanceof Error) return err.message;
+  return "An error occurred. Please try again.";
+}
+
+function userFromLoginFallback(
+  jwt: ReturnType<typeof readJwtPayload>,
+  formEmail: string,
+  normalizedRole: string
+): User {
+  const email = jwt?.email?.trim() || formEmail
+  const id = jwt?.id?.trim() || ""
+  const local = email.split("@")[0] || "User"
+  return {
+    id: id || `session-${Date.now()}`,
+    email,
+    firstName: local,
+    lastName: "",
+    role: normalizedRole,
+  }
+}
+
 export default function Login() {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { isLoading, error } = useAppSelector((state) => state.auth);
   const [showPassword, setShowPassword] = useState(false);
+  const [login, { isLoading: isLoginRequesting }] = useLoginMutation();
+  const [fetchProfile, { isFetching: isProfileLoading }] =
+    useLazyGetMyProfileQuery();
 
   const {
     register,
@@ -45,64 +84,56 @@ export default function Login() {
       remember: false,
     },
   });
-  const demoUsers = [
-    {
-      id: "1",
-      email: "superadmin@example.com",
-      password: "password",
-      role: "super-admin" as const,
-      firstName: "Super",
-      lastName: "Admin",
-    },
-    {
-      id: "2",
-      email: "admin@example.com",
-      password: "password",
-      role: "admin" as const,
-      firstName: "Admin",
-      lastName: "User",
-    },
-    {
-      id: "3",
-      email: "marketing@example.com",
-      password: "password",
-      role: "marketing" as const,
-      firstName: "Marketing",
-      lastName: "User",
-    },
-  ];
-
   const onSubmit = async (data: LoginFormData) => {
     dispatch(loginStart());
 
     try {
-      await new Promise((resolve) => setTimeout(resolve, 800));
+      const loginRes = await login({
+        email: data.email,
+        password: data.password,
+      }).unwrap();
 
-      const matchedUser = demoUsers.find(
-        (u) => u.email === data.email && u.password === data.password
-      );
-
-      if (!matchedUser) {
-        dispatch(loginFailure("Invalid email or password"));
+      const token = loginRes.data?.accessToken;
+      if (!loginRes.success || !token) {
+        dispatch(
+          loginFailure(loginRes.message || "Invalid email or password")
+        );
         return;
       }
 
-      dispatch(
-        loginSuccess({
-          user: {
-            id: matchedUser.id,
-            email: matchedUser.email,
-            firstName: matchedUser.firstName,
-            lastName: matchedUser.lastName,
-            role: matchedUser.role as UserRoleValue,
-          },
-          token: "mock-jwt-token-" + Date.now(),
-        })
-      );
+      const jwt = readJwtPayload(token);
+      const roleRaw =
+        loginRes.data?.role?.trim() || jwt?.role?.trim() || "";
+      const normalizedRole = normalizeApiRole(roleRaw);
 
-      navigate("/dashboard", { replace: true });
-    } catch {
-      dispatch(loginFailure("An error occurred. Please try again."));
+      if (!isDashboardAccessRole(normalizedRole)) {
+        dispatch(
+          loginFailure("Your role is not allowed to access this dashboard")
+        );
+        return;
+      }
+
+      // Token in localStorage + Redux so RTK Query can call `/users/profile`
+      dispatch(setAuthToken(token));
+
+      let user: User;
+      try {
+        const profileRes = await fetchProfile().unwrap();
+        if (profileRes?.success && profileRes.data) {
+          user = profileDataToAuthUser(profileRes.data, data.email);
+        } else {
+          user = userFromLoginFallback(jwt, data.email, normalizedRole);
+        }
+      } catch {
+        user = userFromLoginFallback(jwt, data.email, normalizedRole);
+      }
+
+      dispatch(loginSuccess({ token, user }));
+
+      navigate("/", { replace: true });
+    } catch (e) {
+      dispatch(logout());
+      dispatch(loginFailure(getErrorMessage(e)));
     }
   };
 
@@ -214,9 +245,9 @@ export default function Login() {
           type="submit"
           className="w-full"
           size="lg"
-          isLoading={isLoading}
+          isLoading={isLoading || isLoginRequesting || isProfileLoading}
         >
-          {!isLoading && (
+          {!isLoading && !isLoginRequesting && !isProfileLoading && (
             <>
               Sign In
               <ArrowRight className="ml-2 h-4 w-4" />
@@ -228,27 +259,15 @@ export default function Login() {
       <div className="relative">
         <Separator />
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
-          Demo Credentials
+          Access
         </span>
       </div>
 
-      <div className="p-4 rounded-lg bg-muted/50 border text-sm space-y-3">
-        <p className="font-semibold text-foreground">Demo Credentials:</p>
-        <div className="space-y-2">
-          <div>
-            <p className="font-medium">Super Admin:</p>
-            <p className="text-muted-foreground">superadmin@example.com / password</p>
-          </div>
-          <div>
-            <p className="font-medium">Admin:</p>
-            <p className="text-muted-foreground">admin@example.com / password</p>
-          </div>
-          <div>
-            <p className="font-medium">Marketing:</p>
-            <p className="text-muted-foreground">marketing@example.com / password</p>
-          </div>
-        </div>
-      </div>
+      <p className="text-center text-xs text-muted-foreground">
+        Allowed roles: <span className="font-mono">super_admin</span>,{" "}
+        <span className="font-mono">admin</span>,{" "}
+        <span className="font-mono">marketer</span> (from your account profile).
+      </p>
     </div>
   );
 }

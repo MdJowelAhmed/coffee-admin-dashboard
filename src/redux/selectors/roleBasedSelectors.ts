@@ -1,5 +1,5 @@
 import { RootState } from '../store'
-import { UserRole, hasFeatureAccess, type FeatureKey } from '@/types/roles'
+import { UserRole, hasFeatureAccess, type FeatureKey, type UserRoleValue } from '@/types/roles'
 import { Car } from '@/types'
 
 /**
@@ -10,15 +10,15 @@ export const selectHasFeatureAccess =
   (state: RootState): boolean => {
     const { user } = state.auth
     if (!user) return false
-    return hasFeatureAccess(user.role as UserRole, feature)
+    return hasFeatureAccess(user.role, feature)
   }
 
 /**
  * Get current user's role.
  */
-export const selectUserRole = (state: RootState): UserRole | null => {
+export const selectUserRole = (state: RootState): UserRoleValue | null => {
   const { user } = state.auth
-  return user ? (user.role as UserRole) : null
+  return user ? (user.role as UserRoleValue) : null
 }
 
 /**

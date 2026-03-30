@@ -1,10 +1,11 @@
 import { baseApi } from "../baseApi";
 
-interface LoginResponse {
+export interface LoginResponse {
     success: boolean;
     message: string;
     data?: {
         accessToken?: string;
+        role?: string;
     };
 }
 
@@ -46,7 +47,7 @@ interface ResetPasswordResponse {
     message: string;
 }
 
-interface GetMyProfileResponse {
+export interface GetMyProfileResponse {
     success: boolean;
     message: string;
     data: {
@@ -232,6 +233,7 @@ export const {
     useResetPasswordMutation,
     useResentOtpMutation,
     useGetMyProfileQuery,
+    useLazyGetMyProfileQuery,
     useUpdateMyProfileMutation,
  } =
     authApi

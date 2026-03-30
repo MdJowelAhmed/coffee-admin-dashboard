@@ -1,15 +1,14 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
-import { UserRole } from '@/types/roles'
+import { buildUserFromAccessToken } from '@/utils/authFromJwt'
 
-export type UserRoleValue = (typeof UserRole)[keyof typeof UserRole]
-
-interface User {
+export interface User {
   id: string
   email: string
   firstName: string
   lastName: string
   avatar?: string
-  role: UserRoleValue
+  /** Mirror of JWT / profile role; kept in Redux only — not written to localStorage */
+  role: string
   businessId?: string
   businessName?: string
 }
@@ -24,24 +23,30 @@ interface AuthState {
   verificationEmail: string | null
 }
 
-function getInitialAuthState(): AuthState {
+function readSessionFromStoredToken(): Pick<AuthState, 'user' | 'token' | 'isAuthenticated'> {
   const token = localStorage.getItem('token')
-  const userStr = localStorage.getItem('user')
-  let user: User | null = null
-  if (token && userStr) {
-    try {
-      const parsed = JSON.parse(userStr) as User
-      if (Object.values(UserRole).includes(parsed.role)) {
-        user = parsed
-      }
-    } catch {
-      // Invalid user data in storage
-    }
+  if (!token) {
+    return { user: null, token: null, isAuthenticated: false }
   }
+
+  const user = buildUserFromAccessToken(token)
+  if (!user) {
+    localStorage.removeItem('token')
+    try {
+      localStorage.removeItem('user')
+    } catch {
+      /* ignore */
+    }
+    return { user: null, token: null, isAuthenticated: false }
+  }
+
+  return { user, token, isAuthenticated: true }
+}
+
+function getInitialAuthState(): AuthState {
+  const session = readSessionFromStoredToken()
   return {
-    user,
-    token,
-    isAuthenticated: !!(token && user),
+    ...session,
     isLoading: false,
     error: null,
     passwordResetEmail: null,
@@ -66,11 +71,20 @@ const authSlice = createSlice({
       state.token = action.payload.token
       state.error = null
       localStorage.setItem('token', action.payload.token)
-      localStorage.setItem('user', JSON.stringify(action.payload.user))
     },
     loginFailure: (state, action: PayloadAction<string>) => {
       state.isLoading = false
       state.error = action.payload
+    },
+    /** Saves token only (localStorage + Redux). User should be rebuilt from JWT or profile in memory. */
+    setAuthToken: (state, action: PayloadAction<string>) => {
+      state.token = action.payload
+      localStorage.setItem('token', action.payload)
+      const user = buildUserFromAccessToken(action.payload)
+      if (user) {
+        state.user = user
+        state.isAuthenticated = true
+      }
     },
     logout: (state) => {
       state.user = null
@@ -78,7 +92,11 @@ const authSlice = createSlice({
       state.isAuthenticated = false
       state.error = null
       localStorage.removeItem('token')
-      localStorage.removeItem('user')
+      try {
+        localStorage.removeItem('user')
+      } catch {
+        /* ignore */
+      }
     },
     setPasswordResetEmail: (state, action: PayloadAction<string>) => {
       state.passwordResetEmail = action.payload
@@ -92,21 +110,12 @@ const authSlice = createSlice({
     setLoading: (state, action: PayloadAction<boolean>) => {
       state.isLoading = action.payload
     },
-    loadUserFromStorage: (state) => {
-      const token = localStorage.getItem('token')
-      const userStr = localStorage.getItem('user')
-      if (token && userStr) {
-        try {
-          const parsed = JSON.parse(userStr) as User
-          if (Object.values(UserRole).includes(parsed.role)) {
-            state.user = parsed
-            state.token = token
-            state.isAuthenticated = true
-          }
-        } catch {
-          // Invalid user data in storage
-        }
-      }
+    /** Re-read only `token` from localStorage and rebuild Redux `user` from JWT (no `user` key in LS). */
+    hydrateSessionFromToken: (state) => {
+      const session = readSessionFromStoredToken()
+      state.user = session.user
+      state.token = session.token
+      state.isAuthenticated = session.isAuthenticated
     },
   },
 })
@@ -115,24 +124,16 @@ export const {
   loginStart,
   loginSuccess,
   loginFailure,
+  setAuthToken,
   logout,
   setPasswordResetEmail,
   setVerificationEmail,
   clearError,
   setLoading,
-  loadUserFromStorage,
+  hydrateSessionFromToken,
 } = authSlice.actions
 
+/** @deprecated Use hydrateSessionFromToken */
+export const loadUserFromStorage = hydrateSessionFromToken
+
 export default authSlice.reducer
-
-
-
-
-
-
-
-
-
-
-
-

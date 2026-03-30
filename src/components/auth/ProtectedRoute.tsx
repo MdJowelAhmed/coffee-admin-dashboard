@@ -1,8 +1,8 @@
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAppSelector } from '@/redux/hooks'
-import { UserRole } from '@/types/roles'
+import { DASHBOARD_ACCESS_ROLES } from '@/types/roles'
 
-const VALID_ROLES = [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETING]
+const VALID_ROLES = DASHBOARD_ACCESS_ROLES
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -16,7 +16,7 @@ export function ProtectedRoute({ children }: ProtectedRouteProps) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />
   }
 
-  if (!VALID_ROLES.includes(user.role as UserRole)) {
+  if (!VALID_ROLES.includes(user.role as (typeof VALID_ROLES)[number])) {
     return <Navigate to="/auth/login" state={{ from: location }} replace />
   }
 

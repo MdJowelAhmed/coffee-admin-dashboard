@@ -52,7 +52,7 @@ export const canAccessFeature = (
   userRole: string,
   feature: FeatureKey
 ): boolean => {
-  return hasFeatureAccess(userRole as UserRole, feature)
+  return hasFeatureAccess(userRole, feature)
 }
 
 /**
@@ -64,7 +64,7 @@ export const getRoleBadgeColor = (role: string): string => {
       return 'bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200'
     case UserRole.ADMIN:
       return 'bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200'
-    case UserRole.MARKETING:
+    case UserRole.MARKETER:
       return 'bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200'
     default:
       return 'bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200'
@@ -80,9 +80,11 @@ export const getRoleDisplayName = (role: string): string => {
       return 'Super Admin'
     case UserRole.ADMIN:
       return 'Admin'
-    case UserRole.MARKETING:
-      return 'Marketing'
+    case UserRole.MARKETER:
+      return 'Marketer'
     default:
-      return 'Unknown Role'
+      return role
+        .replace(/_/g, ' ')
+        .replace(/\b\w/g, (c) => c.toUpperCase())
   }
 }

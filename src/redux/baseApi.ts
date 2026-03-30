@@ -1,12 +1,14 @@
 import { createApi, fetchBaseQuery } from '@reduxjs/toolkit/query/react'
-import type { RootState } from './store'
+
+/** Avoid importing `./store` here (store imports baseApi → circular dependency). */
+type RootStateWithAuth = { auth: { token: string | null } }
 
 export const baseApi = createApi({
     reducerPath: 'baseApi',
     baseQuery: fetchBaseQuery({
         baseUrl: import.meta.env.VITE_API_BASE_URL + '/api/v1',
         prepareHeaders: (headers, { getState }) => {
-            const token = (getState() as RootState).auth.token
+            const token = (getState() as RootStateWithAuth).auth.token
             if (token) {
                 headers.set('authorization', `Bearer ${token}`)
             }

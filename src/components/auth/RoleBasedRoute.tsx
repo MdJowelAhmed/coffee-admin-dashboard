@@ -1,11 +1,11 @@
 import { ReactNode } from 'react'
 import { Navigate, useLocation } from 'react-router-dom'
 import { useAppSelector } from '@/redux/hooks'
-import { UserRole } from '@/types/roles'
+import { UserRole, type UserRoleValue } from '@/types/roles'
 
 interface RoleBasedRouteProps {
   children: ReactNode
-  allowedRoles: UserRole[]
+  allowedRoles: readonly UserRoleValue[]
 }
 
 export function RoleBasedRoute({ children, allowedRoles }: RoleBasedRouteProps) {
@@ -16,7 +16,7 @@ export function RoleBasedRoute({ children, allowedRoles }: RoleBasedRouteProps) 
     return <Navigate to="/auth/login" state={{ from: location }} replace />
   }
 
-  if (!allowedRoles.includes(user.role as UserRole)) {
+  if (!allowedRoles.includes(user.role as UserRoleValue)) {
     return <Navigate to="/dashboard" replace />
   }
 

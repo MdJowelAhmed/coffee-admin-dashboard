@@ -7,8 +7,8 @@ import AuthLayout from '@/components/layout/AuthLayout'
 import { ProtectedRoute } from '@/components/auth/ProtectedRoute'
 import { RoleBasedRoute } from '@/components/auth/RoleBasedRoute'
 import { UserRole } from '@/types/roles'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { loadUserFromStorage } from '@/redux/slices/authSlice'
+import { useAppDispatch } from '@/redux/hooks'
+import { hydrateSessionFromToken } from '@/redux/slices/authSlice'
 
 // Auth Pages
 import { Login, ForgotPassword, VerifyEmail, ResetPassword } from '@/pages/Auth'
@@ -39,23 +39,14 @@ import SubscriberList from './pages/Subscribers/SubscriberList'
 import AdManagement from './pages/AdManagement/AdManagement'
 import PushNotificationList from './pages/PushNotification/PushNotificationList'
 import ControllerList from './pages/Controllers/ControllerList'
-
-function AppEntryRedirect() {
-  const { user } = useAppSelector((state) => state.auth)
-
-  if (!user) {
-    return <Navigate to="/auth/login" replace />
-  }
-
-  return <Navigate to="/dashboard" replace />
-}
+import PrivateRoleEntry from '@/pages/Private/PrivateRoleEntry'
 
 function App() {
   const dispatch = useAppDispatch()
 
-  // Load user from storage on app mount
+  // Restore session from token in localStorage (user is derived from JWT, not stored as JSON)
   useEffect(() => {
-    dispatch(loadUserFromStorage())
+    dispatch(hydrateSessionFromToken())
   }, [dispatch])
 
   return (
@@ -79,13 +70,13 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<AppEntryRedirect />} />
+          <Route index element={<PrivateRoleEntry />} />
 
           {/* Dashboard - All roles */}
           <Route
             path="dashboard"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETING]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
                 <Dashboard />
               </RoleBasedRoute>
             }
@@ -105,7 +96,7 @@ function App() {
           <Route
             path="subscribers"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETING]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
                 <SubscriberList />
               </RoleBasedRoute>
             }
@@ -115,7 +106,7 @@ function App() {
           <Route
             path="ad-management"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MARKETING]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.MARKETER]}>
                 <AdManagement />
               </RoleBasedRoute>
             }
@@ -125,7 +116,7 @@ function App() {
           <Route
             path="push-notification"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETING]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
                 <PushNotificationList />
               </RoleBasedRoute>
             }
