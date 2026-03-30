@@ -6,22 +6,56 @@ import { Button } from '@/components/ui/button'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { Switch } from '@/components/ui/switch'
 import { Pagination } from '@/components/common'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
 import {
-  deleteMilkType,
-  toggleMilkTypeStatus,
-} from '@/redux/slices/milkTypeSlice'
-import {
-  deleteSyrupType,
-  toggleSyrupTypeStatus,
-} from '@/redux/slices/syrupTypeSlice'
+  useDeleteCustomizeMutation,
+  useGetCustomizeQuery,
+  useUpdateCustomizeMutation,
+} from '@/redux/api/customizeApi'
 import type { MilkType, SyrupType } from '@/types'
 import { toast } from '@/utils/toast'
-import { formatCurrency } from '@/utils/formatters'
+import { formatCurrency, formatDateTime } from '@/utils/formatters'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditMilkTypeModal } from './AddEditMilkTypeModal'
 import { AddEditSyrupTypeModal } from './AddEditSyrupTypeModal'
 import { ConfirmDialog } from '@/components/common'
+
+function toMilkType(item: {
+  _id: string
+  name: string
+  price: number
+  status: boolean
+  createdAt: string
+  updatedAt: string
+}): MilkType {
+  return {
+    id: item._id,
+    name: item.name,
+    price: item.price,
+    type: 'milk',
+    isActive: item.status,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
+}
+
+function toSyrupType(item: {
+  _id: string
+  name: string
+  price: number
+  status: boolean
+  createdAt: string
+  updatedAt: string
+}): SyrupType {
+  return {
+    id: item._id,
+    name: item.name,
+    price: item.price,
+    type: 'syrup',
+    isActive: item.status,
+    createdAt: item.createdAt,
+    updatedAt: item.updatedAt,
+  }
+}
 
 function MilkTypeTable({
   items,
@@ -36,12 +70,14 @@ function MilkTypeTable({
 }) {
   return (
     <div className="w-full overflow-auto">
-      <table className="w-full min-w-[500px]">
+      <table className="w-full min-w-[900px]">
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Price</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Created</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Updated</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
           </tr>
@@ -49,7 +85,7 @@ function MilkTypeTable({
         <tbody className="divide-y divide-gray-100">
           {items.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+              <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                 No milk types yet. Add one to get started.
               </td>
             </tr>
@@ -63,6 +99,8 @@ function MilkTypeTable({
                     milk
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(m.updatedAt)}</td>
                 <td className="px-6 py-4">
                   <Switch
                     checked={m.isActive}
@@ -111,12 +149,14 @@ function SyrupTypeTable({
 }) {
   return (
     <div className="w-full overflow-auto">
-      <table className="w-full min-w-[500px]">
+      <table className="w-full min-w-[900px]">
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Price</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Created</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Updated</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
           </tr>
@@ -124,7 +164,7 @@ function SyrupTypeTable({
         <tbody className="divide-y divide-gray-100">
           {items.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+              <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
                 No syrup types yet. Add one to get started.
               </td>
             </tr>
@@ -138,6 +178,8 @@ function SyrupTypeTable({
                     syrup
                   </span>
                 </td>
+                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(s.createdAt)}</td>
+                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(s.updatedAt)}</td>
                 <td className="px-6 py-4">
                   <Switch
                     checked={s.isActive}
@@ -174,14 +216,35 @@ function SyrupTypeTable({
 }
 
 export default function Customise() {
-  const dispatch = useAppDispatch()
-  const milkTypes = useAppSelector((s) => s.milkTypes.filteredList)
-  const syrupTypes = useAppSelector((s) => s.syrupTypes.filteredList)
-
   const [milkPage, setMilkPage] = useState(1)
   const [milkLimit, setMilkLimit] = useState(DEFAULT_PAGINATION.limit)
   const [syrupPage, setSyrupPage] = useState(1)
   const [syrupLimit, setSyrupLimit] = useState(DEFAULT_PAGINATION.limit)
+
+  const [updateCustomize] = useUpdateCustomizeMutation()
+  const [deleteCustomize] = useDeleteCustomizeMutation()
+
+  const {
+    data: milkData,
+    isLoading: isMilkLoading,
+    isFetching: isMilkFetching,
+  } = useGetCustomizeQuery({ page: milkPage, limit: milkLimit, type: 'milk' })
+  console.log(milkData)
+
+  const {
+    data: syrupData,
+    isLoading: isSyrupLoading,
+    isFetching: isSyrupFetching,
+  } = useGetCustomizeQuery({ page: syrupPage, limit: syrupLimit, type: 'syrup' })
+
+  const milkTypes = useMemo(
+    () => (milkData?.items ?? []).map(toMilkType),
+    [milkData?.items],
+  )
+  const syrupTypes = useMemo(
+    () => (syrupData?.items ?? []).map(toSyrupType),
+    [syrupData?.items],
+  )
 
   const [milkModalOpen, setMilkModalOpen] = useState(false)
   const [syrupModalOpen, setSyrupModalOpen] = useState(false)
@@ -195,18 +258,11 @@ export default function Customise() {
   const selectedMilk = milkTypes.find((m) => m.id === editingMilkId) ?? null
   const selectedSyrup = syrupTypes.find((s) => s.id === editingSyrupId) ?? null
 
-  const paginatedMilkTypes = useMemo(() => {
-    const start = (milkPage - 1) * milkLimit
-    return milkTypes.slice(start, start + milkLimit)
-  }, [milkTypes, milkPage, milkLimit])
+  const paginatedMilkTypes = milkTypes
+  const paginatedSyrupTypes = syrupTypes
 
-  const paginatedSyrupTypes = useMemo(() => {
-    const start = (syrupPage - 1) * syrupLimit
-    return syrupTypes.slice(start, start + syrupLimit)
-  }, [syrupTypes, syrupPage, syrupLimit])
-
-  const milkTotalPages = Math.ceil(milkTypes.length / milkLimit)
-  const syrupTotalPages = Math.ceil(syrupTypes.length / syrupLimit)
+  const milkTotalPages = milkData?.pagination?.totalPage ?? 1
+  const syrupTotalPages = syrupData?.pagination?.totalPage ?? 1
 
   const handleMilkPageChange = (page: number) => setMilkPage(page)
   const handleMilkLimitChange = (limit: number) => {
@@ -243,15 +299,21 @@ export default function Customise() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      await new Promise((r) => setTimeout(r, 300))
-      if (deleteTarget.type === 'milk') {
-        dispatch(deleteMilkType(deleteTarget.item.id))
-        toast({ title: 'Deleted', description: 'Milk type removed.' })
-      } else {
-        dispatch(deleteSyrupType(deleteTarget.item.id))
-        toast({ title: 'Deleted', description: 'Syrup type removed.' })
-      }
+      await deleteCustomize({ id: deleteTarget.item.id }).unwrap()
+      toast({
+        title: 'Deleted',
+        description:
+          deleteTarget.type === 'milk'
+            ? 'Milk type removed.'
+            : 'Syrup type removed.',
+      })
       setDeleteTarget(null)
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to delete. Please try again.',
+        variant: 'destructive',
+      })
     } finally {
       setIsDeleting(false)
     }
@@ -283,16 +345,29 @@ export default function Customise() {
                 items={paginatedMilkTypes}
                 onEdit={handleEditMilk}
                 onDelete={(m) => handleDelete('milk', m)}
-                onToggle={(m) => dispatch(toggleMilkTypeStatus(m.id))}
+                onToggle={async (m) => {
+                  try {
+                    await updateCustomize({ id: m.id, status: !m.isActive }).unwrap()
+                  } catch (e) {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to update status. Please try again.',
+                      variant: 'destructive',
+                    })
+                  }
+                }}
               />
               <Pagination
                 currentPage={milkPage}
                 totalPages={milkTotalPages}
-                totalItems={milkTypes.length}
+                totalItems={milkData?.pagination?.total ?? milkTypes.length}
                 itemsPerPage={milkLimit}
                 onPageChange={handleMilkPageChange}
                 onItemsPerPageChange={handleMilkLimitChange}
               />
+              {(isMilkLoading || isMilkFetching) && (
+                <div className="text-sm text-gray-500">Loading milk types…</div>
+              )}
             </TabsContent>
             <TabsContent value="syrup" className=" space-y-4">
               <div className="flex justify-end">
@@ -305,16 +380,29 @@ export default function Customise() {
                 items={paginatedSyrupTypes}
                 onEdit={handleEditSyrup}
                 onDelete={(s) => handleDelete('syrup', s)}
-                onToggle={(s) => dispatch(toggleSyrupTypeStatus(s.id))}
+                onToggle={async (s) => {
+                  try {
+                    await updateCustomize({ id: s.id, status: !s.isActive }).unwrap()
+                  } catch (e) {
+                    toast({
+                      title: 'Error',
+                      description: 'Failed to update status. Please try again.',
+                      variant: 'destructive',
+                    })
+                  }
+                }}
               />
               <Pagination
                 currentPage={syrupPage}
                 totalPages={syrupTotalPages}
-                totalItems={syrupTypes.length}
+                totalItems={syrupData?.pagination?.total ?? syrupTypes.length}
                 itemsPerPage={syrupLimit}
                 onPageChange={handleSyrupPageChange}
                 onItemsPerPageChange={handleSyrupLimitChange}
               />
+              {(isSyrupLoading || isSyrupFetching) && (
+                <div className="text-sm text-gray-500">Loading syrup types…</div>
+              )}
             </TabsContent>
           </Tabs>
         </CardContent>

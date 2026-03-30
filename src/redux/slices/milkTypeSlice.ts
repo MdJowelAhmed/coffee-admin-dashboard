@@ -6,20 +6,9 @@ interface MilkTypeState {
   filteredList: MilkType[]
 }
 
-const mockMilkTypes: MilkType[] = [
-  { id: 'm1', name: 'Whole Milk', price: 0.50, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm2', name: 'Oat Milk', price: 0.75, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm3', name: 'Almond Milk', price: 0.80, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm4', name: 'Soy Milk', price: 0.65, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm5', name: 'Skim Milk', price: 0.45, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm6', name: 'Coconut Milk', price: 0.90, type: 'milk', isActive: false, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm7', name: 'Lactose-Free Milk', price: 0.85, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'm8', name: 'Cream', price: 1.00, type: 'milk', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-]
-
 const initialState: MilkTypeState = {
-  list: mockMilkTypes,
-  filteredList: mockMilkTypes,
+  list: [],
+  filteredList: [],
 }
 
 const milkTypeSlice = createSlice({

@@ -1,6 +1,5 @@
 import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { Order, OrderFilters, OrderStatus } from '@/types'
-import { orderListData } from '@/data/orderData'
 
 interface OrderState {
   list: Order[]
@@ -17,8 +16,8 @@ interface OrderState {
 }
 
 const initialState: OrderState = {
-  list: orderListData,
-  filteredList: orderListData,
+  list: [],
+  filteredList: [],
   filters: {
     search: '',
     status: 'all',
@@ -26,8 +25,8 @@ const initialState: OrderState = {
   pagination: {
     page: 1,
     limit: 10,
-    total: orderListData.length,
-    totalPages: Math.ceil(orderListData.length / 10),
+    total: 0,
+    totalPages: 0,
   },
   isLoading: false,
   error: null,

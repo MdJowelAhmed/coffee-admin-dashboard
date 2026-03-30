@@ -7,14 +7,15 @@ import { motion } from 'framer-motion'
 export interface StatCardProps {
     title: string
     value: string | number
-    change: number
+    change?: number
     icon: React.ElementType
-    description: string
+    description?: string
     index: number
 }
 
 export function StatCard({ title, value, change, icon: Icon, description, index }: StatCardProps) {
-    const isPositive = change >= 0
+    const isPositive = change !== undefined && change >= 0
+    const showTrend = change !== undefined && description !== undefined
 
     return (
         <motion.div
@@ -34,22 +35,24 @@ export function StatCard({ title, value, change, icon: Icon, description, index 
                 </CardHeader>
                 <CardContent>
                     <div className="text-2xl xl:text-3xl font-bold text-accent">{value}</div>
-                    <div className="flex items-center gap-2 mt-1">
-                        <span
-                            className={cn(
-                                'flex items-center text-xs font-medium',
-                                isPositive ? 'text-accent' : 'text-accent'
-                            )}
-                        >
-                            {isPositive ? (
-                                <TrendingUp className="h-3 w-3 mr-1" />
-                            ) : (
-                                <TrendingDown className="h-3 w-3 mr-1" />
-                            )}
-                            {formatPercentage(change)}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{description}</span>
-                    </div>
+                    {showTrend && (
+                        <div className="flex items-center gap-2 mt-1">
+                            <span
+                                className={cn(
+                                    'flex items-center text-xs font-medium',
+                                    isPositive ? 'text-accent' : 'text-accent'
+                                )}
+                            >
+                                {isPositive ? (
+                                    <TrendingUp className="h-3 w-3 mr-1" />
+                                ) : (
+                                    <TrendingDown className="h-3 w-3 mr-1" />
+                                )}
+                                {formatPercentage(change)}
+                            </span>
+                            <span className="text-xs text-muted-foreground">{description}</span>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </motion.div>

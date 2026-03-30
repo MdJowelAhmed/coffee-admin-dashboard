@@ -1,35 +1,49 @@
-import { baseApi } from "../baseApi";
+import { baseApi } from '../baseApi'
+import type {
+    DashboardRecentOrder,
+    DashboardSummaryCards,
+    GetOrderSummaryResponse,
+    GetRecentActivityResponse,
+    GetRevenueSummaryResponse,
+    GetStatisticsResponse,
+    OrderByCategoryItem,
+    OrdersByCategoryRange,
+    RevenueByMonthItem,
+} from '../packageTypes/dashboardOverview'
 
 const dashboardOverviewApi = baseApi.injectEndpoints({
     endpoints: (builder) => ({
-   getStatisticsInCardData: builder.query<GetStatisticsResponse, void>({
-    query: () => ({
-        url: `/analytics/summary-cards`,
-        method: 'GET',
+        getStatisticsInCardData: builder.query<DashboardSummaryCards, void>({
+            query: () => ({
+                url: `/analytics/summary-cards`,
+                method: 'GET',
+            }),
+            transformResponse: (response: GetStatisticsResponse) => response.data,
+        }),
+        getRevenueSummary: builder.query<RevenueByMonthItem[], { year: number }>({
+            query: ({ year }) => ({
+                url: '/analytics/gross-revenue-by-month',
+                method: 'GET',
+                params: { year },
+            }),
+            transformResponse: (response: GetRevenueSummaryResponse) => response.data,
+        }),
+        getOrderSummary: builder.query<OrderByCategoryItem[], { range: OrdersByCategoryRange }>({
+            query: ({ range }) => ({
+                url: '/analytics/orders-by-category',
+                method: 'GET',
+                params: { range },
+            }),
+            transformResponse: (response: GetOrderSummaryResponse) => response.data,
+        }),
+        getRecentActivity: builder.query<DashboardRecentOrder[], void>({
+            query: () => ({
+                url: '/analytics/recent-orders',
+                method: 'GET',
+            }),
+            transformResponse: (response: GetRecentActivityResponse) => response.data,
+        }),
     }),
-   }),
-   getRevenueSummary: builder.query<GetRevenueSummaryResponse, void>({
-    query: () => ({
-        url: '/analytics/gross-revenue-by-month',
-        method: 'GET',
-    }),
-   }),
-   getOrderSummary: builder.query<GetOrderSummaryResponse, void>({
-    query: () => ({
-        url: '/analytics/orders-by-category',
-        method: 'GET',
-    }),
-   }),
-   getRecentActivity: builder.query<GetRecentActivityResponse, void>({
-    query: () => ({
-        url: '/analytics/recent-orders',
-        method: 'GET',
-    }),
-   }),
-
-
-    }),
-
 })
 
 export const {
@@ -37,5 +51,4 @@ export const {
     useGetRevenueSummaryQuery,
     useGetOrderSummaryQuery,
     useGetRecentActivityQuery,
- } =
-    dashboardOverviewApi
+} = dashboardOverviewApi

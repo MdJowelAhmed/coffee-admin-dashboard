@@ -1,35 +1,37 @@
-import { Eye, Trash2 } from 'lucide-react'
+import { Eye, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
-import type { Order } from '@/types'
+import type { AdminOrder } from '@/redux/packageTypes/orders'
 
 interface OrderActionButtonsProps {
-  order: Order
-  onView: (order: Order) => void
-  onDelete: (order: Order) => void
+  order: AdminOrder
+  onView: (order: AdminOrder) => void
+  onUpdateStatus: (order: AdminOrder) => void
 }
 
 export function OrderActionButtons({
   order,
   onView,
-  onDelete,
+  onUpdateStatus,
 }: OrderActionButtonsProps) {
   return (
-    <div className="flex items-center justify-end gap-2">
+    <div className="flex items-center justify-end gap-1">
       <Button
         variant="ghost"
         size="icon-sm"
         onClick={() => onView(order)}
         className="h-10 w-10 hover:bg-gray-100"
+        title="View details"
       >
         <Eye className="h-6 w-6 text-gray-600" />
       </Button>
       <Button
         variant="ghost"
         size="icon-sm"
-        onClick={() => onDelete(order)}
-        className="h-10 w-10 hover:bg-red-50"
+        onClick={() => onUpdateStatus(order)}
+        className="h-10 w-10 hover:bg-gray-100"
+        title="Update status"
       >
-        <Trash2 className="h-6 w-6 text-red-600" />
+        <RefreshCw className="h-5 w-5 text-gray-600" />
       </Button>
     </div>
   )

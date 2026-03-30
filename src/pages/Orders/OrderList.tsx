@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -6,93 +6,63 @@ import { Pagination } from '@/components/common/Pagination'
 import { OrderFilterDropdown } from './components/OrderFilterDropdown'
 import { OrderTable } from './components/OrderTable'
 import { ViewOrderDetailsModal } from './components/ViewOrderDetailsModal'
-import { ConfirmDialog } from '@/components/common/ConfirmDialog'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { setFilters, setPage, setLimit, deleteOrder } from '@/redux/slices/orderSlice'
+import { OrderStatusUpdateModal } from './components/OrderStatusUpdateModal'
+import { useGetOrdersQuery } from '@/redux/api/ordersApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
-import { toast } from '@/utils/toast'
-import type { Order, OrderStatus } from '@/types'
+import type { AdminOrder } from '@/redux/packageTypes/orders'
+import { cn } from '@/utils/cn'
 
 export default function OrderList() {
-  const dispatch = useAppDispatch()
-
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
-  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null)
-  const [isConfirmOpen, setIsConfirmOpen] = useState(false)
-  const [orderToDelete, setOrderToDelete] = useState<Order | null>(null)
-  const [isDeleting, setIsDeleting] = useState(false)
+  const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
 
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
   const [statusFilter, setStatusFilter] = useUrlString('status', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 
-  const { filteredList, pagination } = useAppSelector((state) => state.orders)
-  const startIndex = (pagination.page - 1) * pagination.limit
-  const paginatedData = filteredList.slice(
-    startIndex,
-    startIndex + pagination.limit
-  )
-  const totalPages = Math.ceil(filteredList.length / pagination.limit)
-
+  const skipFirstFilterReset = useRef(true)
   useEffect(() => {
-    dispatch(
-      setFilters({
-        search: searchQuery,
-        status: statusFilter as OrderStatus | 'all',
-      })
-    )
-  }, [searchQuery, statusFilter, dispatch])
+    if (skipFirstFilterReset.current) {
+      skipFirstFilterReset.current = false
+      return
+    }
+    setCurrentPage(1)
+  }, [searchQuery, statusFilter, setCurrentPage])
 
-  useEffect(() => {
-    dispatch(setPage(currentPage))
-  }, [currentPage, dispatch])
+  const { data, isLoading, isFetching, isError, error } = useGetOrdersQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchQuery || undefined,
+    orderStatus: statusFilter,
+  })
 
-  useEffect(() => {
-    dispatch(setLimit(itemsPerPage))
-  }, [itemsPerPage, dispatch])
+  const orders = data?.orders ?? []
+  const pagination = data?.pagination
+  const totalPages = pagination?.totalPage ?? 1
+  const totalItems = pagination?.total ?? 0
+  const limit = pagination?.limit ?? itemsPerPage
+  const page = pagination?.page ?? currentPage
+  const startIndex = (page - 1) * limit
 
-  const handleView = (order: Order) => {
+  const handleView = (order: AdminOrder) => {
     setSelectedOrder(order)
     setIsViewModalOpen(true)
   }
 
-  const handleDelete = (order: Order) => {
-    setOrderToDelete(order)
-    setIsConfirmOpen(true)
+  const handleOpenStatus = (order: AdminOrder) => {
+    setSelectedOrder(order)
+    setIsStatusModalOpen(true)
   }
 
-  const handleConfirmDelete = async () => {
-    if (!orderToDelete) return
-
-    setIsDeleting(true)
-    try {
-      await new Promise((resolve) => setTimeout(resolve, 500))
-      dispatch(deleteOrder(orderToDelete.id))
-      toast({
-        variant: 'success',
-        title: 'Order Deleted',
-        description: `Order ${orderToDelete.orderId} has been deleted successfully.`,
-      })
-      setIsConfirmOpen(false)
-      setOrderToDelete(null)
-    } catch {
-      toast({
-        title: 'Error',
-        description: 'Failed to delete order. Please try again.',
-        variant: 'destructive',
-      })
-    } finally {
-      setIsDeleting(false)
-    }
+  const handlePageChange = (p: number) => {
+    setCurrentPage(p)
   }
 
-  const handlePageChange = (page: number) => {
-    setCurrentPage(page)
-  }
-
-  const handleItemsPerPageChange = (limit: number) => {
-    setItemsPerPage(limit)
+  const handleItemsPerPageChange = (next: number) => {
+    setItemsPerPage(next)
+    setCurrentPage(1)
   }
 
   return (
@@ -111,29 +81,50 @@ export default function OrderList() {
             <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
-              placeholder="Search ID or Status..."
+              placeholder="Search order id or status…"
               className="w-[300px]"
             />
             <OrderFilterDropdown
-              value={statusFilter as OrderStatus | 'all'}
+              value={statusFilter}
               onChange={setStatusFilter}
             />
           </div>
         </CardHeader>
 
-        <CardContent className="p-0">
-          <OrderTable
-            orders={paginatedData}
-            onView={handleView}
-            onDelete={handleDelete}
-          />
+        <CardContent className="p-0 relative">
+          {isError && (
+            <div className="px-6 py-4 text-sm text-red-600 border-b border-red-100 bg-red-50">
+              Failed to load orders.
+              {error && 'data' in error && (error.data as { message?: string })?.message
+                ? ` ${(error.data as { message?: string }).message}`
+                : ''}
+            </div>
+          )}
+          <div
+            className={cn(
+              isFetching && !isLoading && 'opacity-70 pointer-events-none transition-opacity'
+            )}
+          >
+            {isLoading ? (
+              <div className="px-6 py-16 text-center text-gray-500 text-sm">
+                Loading orders…
+              </div>
+            ) : (
+              <OrderTable
+                orders={orders}
+                startIndex={startIndex}
+                onView={handleView}
+                onUpdateStatus={handleOpenStatus}
+              />
+            )}
+          </div>
 
           <div className="px-6 py-4 border-t border-gray-100">
             <Pagination
-              currentPage={pagination.page}
-              totalPages={totalPages}
-              totalItems={filteredList.length}
-              itemsPerPage={pagination.limit}
+              currentPage={page}
+              totalPages={Math.max(1, totalPages)}
+              totalItems={totalItems}
+              itemsPerPage={limit}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -150,18 +141,13 @@ export default function OrderList() {
         order={selectedOrder}
       />
 
-      <ConfirmDialog
-        open={isConfirmOpen}
+      <OrderStatusUpdateModal
+        open={isStatusModalOpen}
         onClose={() => {
-          setIsConfirmOpen(false)
-          setOrderToDelete(null)
+          setIsStatusModalOpen(false)
+          setSelectedOrder(null)
         }}
-        onConfirm={handleConfirmDelete}
-        title="Delete Order"
-        description={`Are you sure you want to delete order "${orderToDelete?.orderId}"? This action cannot be undone.`}
-        confirmText="Delete Order"
-        variant="danger"
-        isLoading={isDeleting}
+        order={isStatusModalOpen ? selectedOrder : null}
       />
     </motion.div>
   )

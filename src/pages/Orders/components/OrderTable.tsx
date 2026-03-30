@@ -1,48 +1,79 @@
 import { motion } from 'framer-motion'
-import { Check, X } from 'lucide-react'
+import { Check, Coffee, X } from 'lucide-react'
+import { format, parseISO } from 'date-fns'
 import { OrderActionButtons } from './OrderActionButtons'
 import { cn } from '@/utils/cn'
-import type { Order, OrderStatus } from '@/types'
 import { formatCurrency } from '@/utils/formatters'
+import type { AdminOrder } from '@/redux/packageTypes/orders'
 
 interface OrderTableProps {
-  orders: Order[]
-  onView: (order: Order) => void
-  onDelete: (order: Order) => void
+  orders: AdminOrder[]
+  startIndex: number
+  onView: (order: AdminOrder) => void
+  onUpdateStatus: (order: AdminOrder) => void
 }
 
-const statusConfig: Record<
-  OrderStatus,
-  { bg: string; icon: React.ElementType; label: string }
-> = {
-  Completed: {
-    bg: 'bg-green-500',
-    icon: Check,
-    label: 'Completed',
-  },
-  Processing: {
-    bg: 'bg-blue-500',
-    icon: Check,
-    label: 'Processing',
-  },
-  Cancelled: {
-    bg: 'bg-red-500',
-    icon: X,
-    label: 'Cancelled',
-  },
+function statusUi(status: string) {
+  const key = (status || '').toLowerCase()
+  const map: Record<
+    string,
+    { bg: string; icon: typeof Check; label: string }
+  > = {
+    completed: {
+      bg: 'bg-green-500',
+      icon: Check,
+      label: 'Completed',
+    },
+    processing: {
+      bg: 'bg-blue-500',
+      icon: Check,
+      label: 'Processing',
+    },
+    pending: {
+      bg: 'bg-amber-500',
+      icon: Check,
+      label: 'Pending',
+    },
+    cancelled: {
+      bg: 'bg-red-500',
+      icon: X,
+      label: 'Cancelled',
+    },
+  }
+  return (
+    map[key] ?? {
+      bg: 'bg-gray-500',
+      icon: Check,
+      label: status || '—',
+    }
+  )
 }
 
-export function OrderTable({ orders, onView, onDelete }: OrderTableProps) {
+function lineItemSummary(order: AdminOrder): string {
+  if (!order.items?.length) return '—'
+  return order.items.map((i) => i.productName).join(', ')
+}
+
+function itemQtyTotal(order: AdminOrder): number {
+  return order.items.reduce((sum, i) => sum + (i.quantity ?? 0), 0)
+}
+
+export function OrderTable({
+  orders,
+  startIndex,
+  onView,
+  onUpdateStatus,
+}: OrderTableProps) {
   return (
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[900px]">
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">S.N</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Items</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Title</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Preview</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Order</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Date & Time</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Item Number</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Qty</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Amount</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
@@ -57,38 +88,33 @@ export function OrderTable({ orders, onView, onDelete }: OrderTableProps) {
             </tr>
           ) : (
             orders.map((order, index) => {
-              const config = statusConfig[order.status]
+              const created = parseISO(order.createdAt)
+              const config = statusUi(String(order.orderStatus))
               const StatusIcon = config.icon
               return (
                 <motion.tr
-                  key={order.id}
+                  key={order._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.09 * index }}
+                  transition={{ delay: 0.06 * index }}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <td className="px-6 py-2">
                     <span className="text-sm text-slate-700">
-                      {String(index + 1).padStart(2, '0')}
+                      {String(startIndex + index + 1).padStart(2, '0')}
                     </span>
                   </td>
                   <td className="px-6 py-2">
-                    <img
-                      src={order.image}
-                      alt={order.title}
-                      className="w-12 h-12 object-cover rounded-lg"
-                      onError={(e) => {
-                        e.currentTarget.src =
-                          'https://via.placeholder.com/48?text=Coffee'
-                      }}
-                    />
+                    <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center border border-amber-100">
+                      <Coffee className="h-6 w-6 text-amber-800/70" />
+                    </div>
                   </td>
                   <td className="px-6 py-2">
-                    <div className="flex flex-col">
-                      <span className="text-sm font-semibold text-slate-800">
-                        {order.title}
+                    <div className="flex flex-col max-w-[220px]">
+                      <span className="text-sm font-semibold text-slate-800 truncate">
+                        {lineItemSummary(order)}
                       </span>
-                      <span className="text-xs text-gray-500">
+                      <span className="text-xs text-gray-500 truncate">
                         {order.orderId}
                       </span>
                     </div>
@@ -96,25 +122,25 @@ export function OrderTable({ orders, onView, onDelete }: OrderTableProps) {
                   <td className="px-6 py-2">
                     <div className="flex flex-col">
                       <span className="text-sm text-slate-700">
-                        {order.date}
+                        {format(created, 'dd MMM yyyy')}
                       </span>
                       <span
                         className={cn(
                           'text-xs inline-flex w-fit px-2 py-0.5 rounded-full bg-gray-100 text-gray-600'
                         )}
                       >
-                        {order.time}
+                        {format(created, 'h:mm a')}
                       </span>
                     </div>
                   </td>
                   <td className="px-6 py-2">
                     <span className="text-sm text-slate-700">
-                      {order.itemCount} Items
+                      {itemQtyTotal(order)} items
                     </span>
                   </td>
                   <td className="px-6 py-2">
                     <span className="text-sm font-medium text-slate-700">
-                      {formatCurrency(order.amount)}
+                      {formatCurrency(order.totalAmount)}
                     </span>
                   </td>
                   <td className="px-6 py-2">
@@ -132,7 +158,7 @@ export function OrderTable({ orders, onView, onDelete }: OrderTableProps) {
                     <OrderActionButtons
                       order={order}
                       onView={onView}
-                      onDelete={onDelete}
+                      onUpdateStatus={onUpdateStatus}
                     />
                   </td>
                 </motion.tr>

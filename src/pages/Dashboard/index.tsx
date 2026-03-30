@@ -1,78 +1,114 @@
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { formatCurrency, formatCompactNumber } from '@/utils/formatters'
-// import { AvailableCars, RentalCars, TotalBooking, TotalRevenue } from '@/components/common/svg/DashboardSVG'
 import { StatCard } from './StatCard'
 import { EarningsSummaryChart } from './EarningsSummaryChart'
 import { RecentActivityCard } from './RecentActivityCard'
-import { yearlyData } from './dashboardData'
 import { BarChart2Icon, DollarSign, ListOrdered, UserPlus } from 'lucide-react'
 import { PieChartComponent } from './PieChart'
-// import { TotalRevenue } from '@/components/common/svg/DashboardSVG'
+import {
+    useGetOrderSummaryQuery,
+    useGetRecentActivityQuery,
+    useGetRevenueSummaryQuery,
+    useGetStatisticsInCardDataQuery,
+} from '@/redux/api/dashboardOverviewApi'
+import type { OrdersByCategoryRange } from '@/redux/packageTypes/dashboardOverview'
+
+function buildYearOptions(backYears = 5): string[] {
+    const y = new Date().getFullYear()
+    return Array.from({ length: backYears + 1 }, (_, i) => String(y - i))
+}
 
 export default function Dashboard() {
-  const [selectedYear, setSelectedYear] = useState('2026')
+    const yearOptions = useMemo(() => buildYearOptions(5), [])
+    const [selectedYear, setSelectedYear] = useState(() => String(new Date().getFullYear()))
+    const [categoryRange, setCategoryRange] = useState<OrdersByCategoryRange>('week')
 
-  const chartData = useMemo(() => yearlyData[selectedYear], [selectedYear])
+    const yearNum = Number.parseInt(selectedYear, 10)
 
-  const stats = [
-    {
-      title: 'Total Orders',
-      value: formatCompactNumber(12543),
-      change: 12.5,
-      icon: ListOrdered,
-      description: 'vs last month',
-    },
-    {
-      title: 'Total Sales',
-      value: formatCompactNumber(3420),
-      change: 8.2,
-      icon: DollarSign,
-      description: 'vs last month',
-    },
-    {
-      title: 'New Customers',
-      value: '156',
-      change: 3.1,
-      icon: UserPlus,
-      description: 'vs last month',
-    },
-    {
-      title: 'Total Revenue',
-      value: formatCurrency(845320),
-      change: -2.4,
-      icon: BarChart2Icon,
-      description: 'vs last month',
-    },
-  ]
+    const { data: summary, isLoading: summaryLoading } = useGetStatisticsInCardDataQuery()
+    const { data: revenueRows = [], isLoading: revenueLoading } = useGetRevenueSummaryQuery(
+        { year: yearNum },
+        { skip: Number.isNaN(yearNum) }
+    )
+    const { data: categoryItems = [], isLoading: categoryLoading } = useGetOrderSummaryQuery({
+        range: categoryRange,
+    })
+    const { data: recentOrders = [], isLoading: recentLoading } = useGetRecentActivityQuery()
 
-  return (
-    <div className="space-y-6">
-      {/* Stats Grid */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        {stats.map((stat, index) => (
-          <StatCard key={stat.title} {...stat} index={index} />
-        ))}
-      </div>
+    const stats = useMemo(
+        () => [
+            {
+                title: 'Total Orders',
+                value: summaryLoading ? '—' : formatCompactNumber(summary?.totalOrders ?? 0),
+                icon: ListOrdered,
+                description: undefined,
+                change: undefined,
+                index: 0,
+            },
+            {
+                title: 'Total Sales',
+                value: summaryLoading ? '—' : formatCompactNumber(summary?.totalSales ?? 0),
+                icon: DollarSign,
+                description: undefined,
+                change: undefined,
+                index: 1,
+            },
+            {
+                title: 'New Customers',
+                value: summaryLoading ? '—' : formatCompactNumber(summary?.newCustomersLast30Days ?? 0),
+                icon: UserPlus,
+                description: undefined,
+                change: undefined,
+                index: 2,
+            },
+            {
+                title: 'Total Revenue',
+                value: summaryLoading ? '—' : formatCurrency(summary?.totalGrossRevenue ?? 0),
+                icon: BarChart2Icon,
+                description: undefined,
+                change: undefined,
+                index: 3,
+            },
+        ],
+        [summary, summaryLoading]
+    )
 
-      {/* Chart Section - Two Column Layout */}
-      <div className="grid gap-6 lg:grid-cols-12">
-       <div className='col-span-8'>
-         <EarningsSummaryChart
-          chartData={chartData}
-          selectedYear={selectedYear}
-          onYearChange={setSelectedYear} 
-          
-        />
-       </div>
-       <div className='col-span-4'>
-        <PieChartComponent />
-       </div>
-      </div>
+    const chartData = useMemo(
+        () => revenueRows.map((r) => ({ month: r.month, revenue: r.revenue, year: r.year })),
+        [revenueRows]
+    )
 
-      {/* Recent Activity */}
-      <div>
-        <RecentActivityCard />
-      </div>
-    </div>
-  )
+    return (
+        <div className="space-y-6">
+            <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+                {stats.map((stat) => (
+                    <StatCard key={stat.title} {...stat} />
+                ))}
+            </div>
+
+            <div className="grid gap-6 lg:grid-cols-12">
+                <div className="col-span-8">
+                    <EarningsSummaryChart
+                        chartData={chartData}
+                        selectedYear={selectedYear}
+                        yearOptions={yearOptions}
+                        onYearChange={setSelectedYear}
+                        isLoading={revenueLoading}
+                    />
+                </div>
+                <div className="col-span-4">
+                    <PieChartComponent
+                        categoryItems={categoryItems}
+                        selectedRange={categoryRange}
+                        onRangeChange={setCategoryRange}
+                        isLoading={categoryLoading}
+                    />
+                </div>
+            </div>
+
+            <div>
+                <RecentActivityCard orders={recentOrders} isLoading={recentLoading} />
+            </div>
+        </div>
+    )
 }

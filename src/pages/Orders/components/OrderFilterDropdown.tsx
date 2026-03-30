@@ -9,11 +9,12 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { orderStatusFilterOptions } from '../orderData'
 import { cn } from '@/utils/cn'
-import type { OrderStatus } from '@/types'
+
+export type OrderFilterStatusValue = string
 
 interface OrderFilterDropdownProps {
-  value: OrderStatus | 'all'
-  onChange: (value: OrderStatus | 'all') => void
+  value: OrderFilterStatusValue
+  onChange: (value: OrderFilterStatusValue) => void
   className?: string
 }
 
@@ -45,7 +46,7 @@ export function OrderFilterDropdown({
           <DropdownMenuItem
             key={option.value}
             onClick={() => {
-              onChange(option.value as OrderStatus | 'all')
+              onChange(option.value)
               setIsOpen(false)
             }}
             className={cn(

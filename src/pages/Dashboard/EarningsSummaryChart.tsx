@@ -16,48 +16,42 @@ import {
     ResponsiveContainer,
 } from 'recharts'
 import { motion } from 'framer-motion'
-import { years } from './dashboardData'
 
-interface ChartDataPoint {
+export interface RevenueChartPoint {
     month: string
     revenue: number
-    users: number
-    orders: number
+    year?: number
 }
 
 interface EarningsSummaryChartProps {
-    chartData: ChartDataPoint[]
+    chartData: RevenueChartPoint[]
     selectedYear: string
+    yearOptions: string[]
     onYearChange: (year: string) => void
+    isLoading?: boolean
 }
 
-
 const generateTicks = (max: number) => {
-    if (max === 0) return [0, 25, 50, 75, 100];
+    if (max === 0) return [0, 25, 50, 75, 100]
 
-    // Calculate a nice step size
-    // We want 5 intervals (0 to max split 4 times) so 5 ticks total including 0
-    const roughStep = max / 4;
+    const roughStep = max / 4
+    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)))
+    const normalizedStep = roughStep / magnitude
 
-    // Round step to a "nice" number (like 10, 20, 25, 50, 100 etc)
-    const magnitude = Math.pow(10, Math.floor(Math.log10(roughStep)));
-    const normalizedStep = roughStep / magnitude;
+    let niceStep
+    if (normalizedStep <= 1) niceStep = 1
+    else if (normalizedStep <= 2) niceStep = 2
+    else if (normalizedStep <= 2.5) niceStep = 2.5
+    else if (normalizedStep <= 5) niceStep = 5
+    else niceStep = 10
 
-    let niceStep;
-    if (normalizedStep <= 1) niceStep = 1;
-    else if (normalizedStep <= 2) niceStep = 2;
-    else if (normalizedStep <= 2.5) niceStep = 2.5;
-    else if (normalizedStep <= 5) niceStep = 5;
-    else niceStep = 10;
-
-    const step = niceStep * magnitude;
-
-    const ticks = [];
+    const step = niceStep * magnitude
+    const ticks = []
     for (let i = 0; i <= 4; i++) {
-        ticks.push(i * step);
+        ticks.push(i * step)
     }
-    return ticks;
-};
+    return ticks
+}
 
 const strKFormatter = (num: number) => {
     if (num > 999) {
@@ -79,7 +73,15 @@ const CustomTooltip = ({ active, payload }: any) => {
     return null
 }
 
-export function EarningsSummaryChart({ chartData, selectedYear, onYearChange }: EarningsSummaryChartProps) {
+export function EarningsSummaryChart({
+    chartData,
+    selectedYear,
+    yearOptions,
+    onYearChange,
+    isLoading,
+}: EarningsSummaryChartProps) {
+    const maxRevenue =
+        chartData.length > 0 ? Math.max(...chartData.map((d) => d.revenue), 0) : 0
 
     return (
         <motion.div
@@ -91,64 +93,74 @@ export function EarningsSummaryChart({ chartData, selectedYear, onYearChange }: 
                 <CardHeader>
                     <div className="flex items-center justify-between">
                         <CardTitle>Revenue Overview</CardTitle>
-                        <Select value={selectedYear} onValueChange={onYearChange} >
+                        <Select value={selectedYear} onValueChange={onYearChange} disabled={isLoading}>
                             <SelectTrigger className="w-[120px] bg-secondary-foreground text-accent border-none">
                                 <SelectValue placeholder="Year" />
                             </SelectTrigger>
                             <SelectContent>
-                                {years.map((year) => (
+                                {yearOptions.map((year) => (
                                     <SelectItem key={year} value={year}>
-                                        Last {year}
+                                        {year}
                                     </SelectItem>
                                 ))}
                             </SelectContent>
                         </Select>
                     </div>
-                    
                 </CardHeader>
                 <CardContent>
-                    <div className="h-[290px] w-full">
-                        <ResponsiveContainer width="100%" height="100%">
-                            <AreaChart
-                                data={chartData}
-                                margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
-                            >
-                                <defs>
-                                    <linearGradient id="earningGradient" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="5%" stopColor="#F76212" stopOpacity={0.3} />
-                                        <stop offset="95%" stopColor="#F76212" stopOpacity={0} />
-                                    </linearGradient>
-                                </defs>
-                                <CartesianGrid strokeDasharray="3 3" vertical={true} horizontal={false} stroke="#E5E7EB" />
-                                <XAxis
-                                    dataKey="month"
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                                    dy={10}
-                                />
-                                <YAxis
-                                    axisLine={false}
-                                    tickLine={false}
-                                    tick={{ fill: '#9CA3AF', fontSize: 12 }}
-                                    tickFormatter={(value) => strKFormatter(value)}
-                                    allowDataOverflow={false}
-                                    domain={[0, 'dataMax']}
-                                    ticks={generateTicks(Math.max(...chartData.map(d => d.revenue)))}
-                                />
-                                <Tooltip content={<CustomTooltip />} />
-                                <Area
-                                    type="natural"
-                                    dataKey="revenue"
-                                    stroke="#F76212"
-                                    strokeWidth={3}
-                                    fill="url(#earningGradient)"
-                                    dot={false}
-                                    activeDot={{ r: 6, fill: '#FF9F43', stroke: '#fff', strokeWidth: 2 }}
-                                />
-                            </AreaChart>
-                        </ResponsiveContainer>
-                    </div>
+                    {isLoading ? (
+                        <div className="h-[290px] w-full flex items-center justify-center text-sm text-muted-foreground">
+                            Loading revenue…
+                        </div>
+                    ) : (
+                        <div className="h-[290px] w-full">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <AreaChart
+                                    data={chartData}
+                                    margin={{ top: 20, right: 10, left: 0, bottom: 0 }}
+                                >
+                                    <defs>
+                                        <linearGradient id="earningGradient" x1="0" y1="0" x2="0" y2="1">
+                                            <stop offset="5%" stopColor="#F76212" stopOpacity={0.3} />
+                                            <stop offset="95%" stopColor="#F76212" stopOpacity={0} />
+                                        </linearGradient>
+                                    </defs>
+                                    <CartesianGrid
+                                        strokeDasharray="3 3"
+                                        vertical={true}
+                                        horizontal={false}
+                                        stroke="#E5E7EB"
+                                    />
+                                    <XAxis
+                                        dataKey="month"
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                        dy={10}
+                                    />
+                                    <YAxis
+                                        axisLine={false}
+                                        tickLine={false}
+                                        tick={{ fill: '#9CA3AF', fontSize: 12 }}
+                                        tickFormatter={(value) => strKFormatter(value)}
+                                        allowDataOverflow={false}
+                                        domain={[0, 'dataMax']}
+                                        ticks={generateTicks(maxRevenue)}
+                                    />
+                                    <Tooltip content={<CustomTooltip />} />
+                                    <Area
+                                        type="natural"
+                                        dataKey="revenue"
+                                        stroke="#F76212"
+                                        strokeWidth={3}
+                                        fill="url(#earningGradient)"
+                                        dot={false}
+                                        activeDot={{ r: 6, fill: '#FF9F43', stroke: '#fff', strokeWidth: 2 }}
+                                    />
+                                </AreaChart>
+                            </ResponsiveContainer>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </motion.div>

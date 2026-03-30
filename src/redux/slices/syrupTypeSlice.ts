@@ -6,20 +6,9 @@ interface SyrupTypeState {
   filteredList: SyrupType[]
 }
 
-const mockSyrupTypes: SyrupType[] = [
-  { id: 's1', name: 'Vanilla', price: 0.60, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's2', name: 'Caramel', price: 0.65, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's3', name: 'Hazelnut', price: 0.70, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's4', name: 'Mocha', price: 0.75, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's5', name: 'Irish Cream', price: 0.80, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's6', name: 'Pumpkin Spice', price: 0.85, type: 'syrup', isActive: false, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's7', name: 'Salted Caramel', price: 0.70, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 's8', name: 'Sugar-Free Vanilla', price: 0.65, type: 'syrup', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-]
-
 const initialState: SyrupTypeState = {
-  list: mockSyrupTypes,
-  filteredList: mockSyrupTypes,
+  list: [],
+  filteredList: [],
 }
 
 const syrupTypeSlice = createSlice({

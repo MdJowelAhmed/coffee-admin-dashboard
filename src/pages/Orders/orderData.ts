@@ -2,7 +2,8 @@ import type { SelectOption } from '@/types'
 
 export const orderStatusFilterOptions: SelectOption[] = [
   { value: 'all', label: 'All Status' },
-  { value: 'Completed', label: 'Completed' },
-  { value: 'Processing', label: 'Processing' },
-  { value: 'Cancelled', label: 'Cancelled' },
+  { value: 'pending', label: 'Pending' },
+  { value: 'processing', label: 'Processing' },
+  { value: 'completed', label: 'Completed' },
+  { value: 'cancelled', label: 'Cancelled' },
 ]

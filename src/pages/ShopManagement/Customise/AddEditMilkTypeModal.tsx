@@ -4,8 +4,10 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ModalWrapper, FormInput } from '@/components/common'
 import { Button } from '@/components/ui/button'
-import { useAppDispatch } from '@/redux/hooks'
-import { addMilkType, updateMilkType } from '@/redux/slices/milkTypeSlice'
+import {
+  useCreateCustomizeMutation,
+  useUpdateCustomizeMutation,
+} from '@/redux/api/customizeApi'
 import type { MilkType } from '@/types'
 import { toast } from '@/utils/toast'
 
@@ -29,8 +31,9 @@ export function AddEditMilkTypeModal({
   editingId,
   milkType,
 }: AddEditMilkTypeModalProps) {
-  const dispatch = useAppDispatch()
   const isEdit = !!editingId
+  const [createCustomize, { isLoading: isCreating }] = useCreateCustomizeMutation()
+  const [updateCustomize, { isLoading: isUpdating }] = useUpdateCustomizeMutation()
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -47,25 +50,32 @@ export function AddEditMilkTypeModal({
     }
   }, [open, isEdit, milkType, reset])
 
-  const onSubmit = (data: FormData) => {
-    const now = new Date().toISOString()
-    const payload: MilkType = {
-      id: isEdit && milkType ? milkType.id : Date.now().toString(),
-      name: data.name,
-      price: data.price,
-      type: 'milk',
-      isActive: isEdit && milkType ? milkType.isActive : true,
-      createdAt: isEdit && milkType ? milkType.createdAt : now,
-      updatedAt: now,
+  const onSubmit = async (data: FormData) => {
+    try {
+      if (isEdit && milkType) {
+        await updateCustomize({
+          id: milkType.id,
+          name: data.name,
+          price: data.price,
+          type: 'milk',
+        }).unwrap()
+        toast({ title: 'Updated', description: 'Milk type updated successfully.' })
+      } else {
+        await createCustomize({
+          name: data.name,
+          price: data.price,
+          type: 'milk',
+        }).unwrap()
+        toast({ title: 'Added', description: 'Milk type added successfully.' })
+      }
+      onClose()
+    } catch (e) {
+      toast({
+        title: 'Error',
+        description: 'Failed to save milk type. Please try again.',
+        variant: 'destructive',
+      })
     }
-    if (isEdit) {
-      dispatch(updateMilkType(payload))
-      toast({ title: 'Updated', description: 'Milk type updated successfully.' })
-    } else {
-      dispatch(addMilkType(payload))
-      toast({ title: 'Added', description: 'Milk type added successfully.' })
-    }
-    onClose()
   }
 
   return (
@@ -96,7 +106,9 @@ export function AddEditMilkTypeModal({
         />
         <div className="flex justify-end gap-3 pt-4">
           {/* <Button type="button" variant="outline" onClick={onClose}>Cancel</Button> */}
-          <Button type="submit" disabled={isSubmitting}>{isEdit ? 'Saving...' : 'Add Milk Type'}</Button>
+          <Button type="submit" disabled={isSubmitting || isCreating || isUpdating}>
+            {isEdit ? 'Saving' : 'Add Milk Type'}
+          </Button>
         </div>
       </form>
     </ModalWrapper>
