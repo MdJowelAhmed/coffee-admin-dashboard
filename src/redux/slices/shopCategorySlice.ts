@@ -7,14 +7,14 @@ interface ShopCategoryState {
 }
 
 const mockShopCategories: ShopCategory[] = [
-  { id: 'sc1', name: 'Hot Coffee', shortDescription: 'Classic hot brewed coffees and espresso drinks.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc2', name: 'Cold Coffee', shortDescription: 'Iced coffees, cold brew, and frappuccinos.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc3', name: 'Tea', shortDescription: 'Green tea, black tea, chai, and herbal blends.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc4', name: 'Pastries', shortDescription: 'Croissants, muffins, cakes, and cookies.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc5', name: 'Sandwiches', shortDescription: 'Breakfast and lunch sandwiches, paninis.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc6', name: 'Smoothies', shortDescription: 'Fresh fruit smoothies and protein shakes.', isActive: false, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc7', name: 'Snacks', shortDescription: 'Chips, nuts, energy bars, and light bites.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
-  { id: 'sc8', name: 'Seasonal', shortDescription: 'Limited-time seasonal offerings.', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc1', name: 'Hot Coffee', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc2', name: 'Cold Coffee', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc3', name: 'Tea', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc4', name: 'Pastries', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc5', name: 'Sandwiches', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc6', name: 'Smoothies', isActive: false, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc7', name: 'Snacks', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
+  { id: 'sc8', name: 'Seasonal', isActive: true, createdAt: '2024-01-01T10:00:00Z', updatedAt: '2024-01-01T10:00:00Z' },
 ]
 
 const initialState: ShopCategoryState = {

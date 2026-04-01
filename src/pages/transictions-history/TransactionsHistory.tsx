@@ -1,46 +1,39 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useRef } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchInput } from '@/components/common/SearchInput'
 import { Pagination } from '@/components/common/Pagination'
 import { RevenueTable } from './components/RevenueTable'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { setFilters, setPage, setLimit } from '@/redux/slices/transactionSlice'
+import { useGetRevenueQuery } from '@/redux/api/revenueApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
 
 export default function RevenueList() {
-  const dispatch = useAppDispatch()
-
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 
-  const { filteredList, pagination } = useAppSelector(
-    (state) => state.transactions
-  )
+  const { data, isFetching, isError } = useGetRevenueQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchQuery,
+  })
 
+  const prevSearchRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(
-      setFilters({
-        search: searchQuery,
-        status: 'all',
-      })
-    )
-  }, [searchQuery, dispatch])
+    if (prevSearchRef.current === null) {
+      prevSearchRef.current = searchQuery
+      return
+    }
+    if (prevSearchRef.current !== searchQuery) {
+      prevSearchRef.current = searchQuery
+      setCurrentPage(1)
+    }
+  }, [searchQuery, setCurrentPage])
 
-  useEffect(() => {
-    dispatch(setPage(currentPage))
-  }, [currentPage, dispatch])
-
-  useEffect(() => {
-    dispatch(setLimit(itemsPerPage))
-  }, [itemsPerPage, dispatch])
-
-  const totalPages = pagination.totalPages
-  const paginatedData = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit
-    return filteredList.slice(startIndex, startIndex + pagination.limit)
-  }, [filteredList, pagination.page, pagination.limit])
+  const items = data?.items ?? []
+  const pagination = data?.pagination
+  const totalPages = pagination?.totalPage ?? 1
+  const totalItems = pagination?.total ?? 0
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -48,6 +41,7 @@ export default function RevenueList() {
 
   const handleItemsPerPageChange = (limit: number) => {
     setItemsPerPage(limit)
+    setCurrentPage(1)
   }
 
   return (
@@ -65,20 +59,32 @@ export default function RevenueList() {
           <SearchInput
             value={searchQuery}
             onChange={setSearchQuery}
-            placeholder="Search ID, Status..."
+            placeholder="Search order ID, status..."
             className="w-[280px]"
           />
         </CardHeader>
 
         <CardContent className="p-0">
-          <RevenueTable transactions={paginatedData} />
+          {isFetching && items.length === 0 ? (
+            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+              Loading revenue...
+            </div>
+          ) : null}
+          {isError && !isFetching ? (
+            <div className="px-6 py-8 text-center text-sm text-red-600">
+              Could not load revenue. Please try again.
+            </div>
+          ) : null}
+          {!(isFetching && items.length === 0) ? (
+            <RevenueTable items={items} />
+          ) : null}
 
           <div className="px-6 py-4 border-t border-gray-100">
             <Pagination
-              currentPage={pagination.page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredList.length}
-              itemsPerPage={pagination.limit}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
               variant="revenue"

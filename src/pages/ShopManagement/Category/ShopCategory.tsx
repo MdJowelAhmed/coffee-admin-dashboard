@@ -1,16 +1,25 @@
-import { useMemo, useState } from 'react'
+import { useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
 import { Pagination, ConfirmDialog } from '@/components/common'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { deleteShopCategory, toggleShopCategoryStatus } from '@/redux/slices/shopCategorySlice'
-import type { ShopCategory } from '@/types'
 import { toast } from '@/utils/toast'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditShopCategoryModal } from './AddEditShopCategoryModal'
+import {
+  useDeleteCategoryMutation,
+  useGetCategoriesQuery,
+  useUpdateCategoryMutation,
+} from '@/redux/api/CategoryApi'
+import type { Category } from '@/redux/packageTypes/category'
+
+function formatDateTime(iso: string) {
+  const d = new Date(iso)
+  if (Number.isNaN(d.getTime())) return iso
+  return d.toLocaleString()
+}
 
 function ShopCategoryTable({
   items,
@@ -18,18 +27,19 @@ function ShopCategoryTable({
   onDelete,
   onToggle,
 }: {
-  items: ShopCategory[]
-  onEdit: (c: ShopCategory) => void
-  onDelete: (c: ShopCategory) => void
-  onToggle: (c: ShopCategory) => void
+  items: Category[]
+  onEdit: (c: Category) => void
+  onDelete: (c: Category) => void
+  onToggle: (c: Category) => void
 }) {
   return (
     <div className="w-full overflow-auto">
-      <table className="w-full min-w-[500px]">
+      <table className="w-full min-w-[700px]">
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Short Description</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Created</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Updated</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
           </tr>
@@ -37,7 +47,7 @@ function ShopCategoryTable({
         <tbody className="divide-y divide-gray-100">
           {items.length === 0 ? (
             <tr>
-              <td colSpan={4} className="px-6 py-8 text-center text-gray-500">
+              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
                 No categories yet. Add one to get started.
               </td>
             </tr>
@@ -45,8 +55,11 @@ function ShopCategoryTable({
             items.map((c) => (
               <tr key={c.id} className="hover:bg-gray-50">
                 <td className="px-6 py-4 font-medium">{c.name}</td>
-                <td className="px-6 py-4 text-muted-foreground max-w-xs truncate">
-                  {c.shortDescription}
+                <td className="px-6 py-4 text-muted-foreground">
+                  {formatDateTime(c.createdAt)}
+                </td>
+                <td className="px-6 py-4 text-muted-foreground">
+                  {formatDateTime(c.updatedAt)}
                 </td>
                 <td className="px-6 py-4">
                   <Switch
@@ -84,24 +97,21 @@ function ShopCategoryTable({
 }
 
 export default function ShopCategory() {
-  const dispatch = useAppDispatch()
-  const categories = useAppSelector((s) => s.shopCategories.filteredList)
-
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<ShopCategory | null>(null)
+  const [deleteTarget, setDeleteTarget] = useState<Category | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const { data, isFetching } = useGetCategoriesQuery({ page, limit })
+  const [deleteCategory] = useDeleteCategoryMutation()
+  const [updateCategory] = useUpdateCategoryMutation()
+
+  const categories = data?.items ?? []
   const selected = categories.find((c) => c.id === editingId) ?? null
-
-  const paginatedCategories = useMemo(() => {
-    const start = (page - 1) * limit
-    return categories.slice(start, start + limit)
-  }, [categories, page, limit])
-
-  const totalPages = Math.ceil(categories.length / limit)
+  const totalPages = data?.pagination?.totalPage ?? 1
+  const totalItems = data?.pagination?.total ?? categories.length
 
   const handlePageChange = (newPage: number) => setPage(newPage)
   const handleLimitChange = (newLimit: number) => {
@@ -113,7 +123,7 @@ export default function ShopCategory() {
     setEditingId(null)
     setModalOpen(true)
   }
-  const handleEdit = (c: ShopCategory) => {
+  const handleEdit = (c: Category) => {
     setEditingId(c.id)
     setModalOpen(true)
   }
@@ -122,13 +132,20 @@ export default function ShopCategory() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      await new Promise((r) => setTimeout(r, 300))
-      dispatch(deleteShopCategory(deleteTarget.id))
+      await deleteCategory({ id: deleteTarget.id }).unwrap()
       toast({ title: 'Deleted', description: 'Category removed.' })
       setDeleteTarget(null)
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  const handleToggleStatus = async (c: Category) => {
+    await updateCategory({ id: c.id, isActive: !c.isActive }).unwrap()
+    toast({
+      title: 'Updated',
+      description: `Category is now ${!c.isActive ? 'active' : 'inactive'}.`,
+    })
   }
 
   return (
@@ -145,7 +162,7 @@ export default function ShopCategory() {
               Shop Category
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage categories with name and short description
+              Manage categories (name, status, created/updated time)
             </p>
           </div>
           <Button onClick={handleAdd} className="bg-primary text-white">
@@ -154,16 +171,19 @@ export default function ShopCategory() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
+          {isFetching ? (
+            <div className="px-6 py-6 text-sm text-muted-foreground">Loading...</div>
+          ) : null}
           <ShopCategoryTable
-            items={paginatedCategories}
+            items={categories}
             onEdit={handleEdit}
             onDelete={setDeleteTarget}
-            onToggle={(c) => dispatch(toggleShopCategoryStatus(c.id))}
+            onToggle={handleToggleStatus}
           />
           <Pagination
             currentPage={page}
             totalPages={totalPages}
-            totalItems={categories.length}
+            totalItems={totalItems}
             itemsPerPage={limit}
             onPageChange={handlePageChange}
             onItemsPerPageChange={handleLimitChange}

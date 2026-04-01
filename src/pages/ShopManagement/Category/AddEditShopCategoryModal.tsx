@@ -2,16 +2,14 @@ import { useEffect } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ModalWrapper, FormInput, FormTextarea } from '@/components/common'
+import { ModalWrapper, FormInput } from '@/components/common'
 import { Button } from '@/components/ui/button'
-import { useAppDispatch } from '@/redux/hooks'
-import { addShopCategory, updateShopCategory } from '@/redux/slices/shopCategorySlice'
-import type { ShopCategory } from '@/types'
 import { toast } from '@/utils/toast'
+import { useCreateCategoryMutation, useUpdateCategoryMutation } from '@/redux/api/CategoryApi'
+import type { Category } from '@/redux/packageTypes/category'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
-  shortDescription: z.string().min(1, 'Short description is required'),
 })
 
 type FormData = z.infer<typeof schema>
@@ -20,7 +18,7 @@ interface AddEditShopCategoryModalProps {
   open: boolean
   onClose: () => void
   editingId: string | null
-  category: ShopCategory | null
+  category: Category | null
 }
 
 export function AddEditShopCategoryModal({
@@ -29,41 +27,35 @@ export function AddEditShopCategoryModal({
   editingId,
   category,
 }: AddEditShopCategoryModalProps) {
-  const dispatch = useAppDispatch()
   const isEdit = !!editingId
+  const [createCategory] = useCreateCategoryMutation()
+  const [updateCategory] = useUpdateCategoryMutation()
 
   const { register, handleSubmit, reset, formState: { errors, isSubmitting } } = useForm<FormData>({
     resolver: zodResolver(schema),
-    defaultValues: { name: '', shortDescription: '' },
+    defaultValues: { name: '' },
   })
 
   useEffect(() => {
     if (open) {
       if (isEdit && category) {
-        reset({ name: category.name, shortDescription: category.shortDescription })
+        reset({ name: category.name })
       } else {
-        reset({ name: '', shortDescription: '' })
+        reset({ name: '' })
       }
     }
   }, [open, isEdit, category, reset])
 
-  const onSubmit = (data: FormData) => {
-    const now = new Date().toISOString()
-    const payload: ShopCategory = {
-      id: isEdit && category ? category.id : Date.now().toString(),
-      name: data.name,
-      shortDescription: data.shortDescription,
-      isActive: isEdit && category ? category.isActive : true,
-      createdAt: isEdit && category ? category.createdAt : now,
-      updatedAt: now,
-    }
-    if (isEdit) {
-      dispatch(updateShopCategory(payload))
+  const onSubmit = async (data: FormData) => {
+    if (isEdit && category) {
+      await updateCategory({ id: category.id, name: data.name }).unwrap()
       toast({ title: 'Updated', description: 'Category updated successfully.' })
-    } else {
-      dispatch(addShopCategory(payload))
-      toast({ title: 'Added', description: 'Category added successfully.' })
+      onClose()
+      return
     }
+
+    await createCategory({ name: data.name }).unwrap()
+    toast({ title: 'Added', description: 'Category added successfully.' })
     onClose()
   }
 
@@ -82,14 +74,6 @@ export function AddEditShopCategoryModal({
           error={errors.name?.message}
           required
           {...register('name')}
-        />
-        <FormTextarea
-          label="Short Description"
-          placeholder="Brief description of this category"
-          error={errors.shortDescription?.message}
-          required
-          rows={3}
-          {...register('shortDescription')}
         />
         <div className="flex justify-end gap-3 pt-4">
           {/* <Button type="button" variant="outline" onClick={onClose}>Cancel</Button> */}

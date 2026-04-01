@@ -575,7 +575,6 @@ export interface SyrupType {
 export interface ShopCategory {
   id: string
   name: string
-  shortDescription: string
   isActive: boolean
   createdAt: string
   updatedAt: string
