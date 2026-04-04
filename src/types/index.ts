@@ -603,6 +603,10 @@ export interface Shop {
   shopName: string
   contact: string
   location: string
+  /** WGS84 latitude as string (for API payloads and map) */
+  latitude?: string
+  /** WGS84 longitude as string */
+  longitude?: string
   openTime: string
   closeTime: string
   offDay?: string

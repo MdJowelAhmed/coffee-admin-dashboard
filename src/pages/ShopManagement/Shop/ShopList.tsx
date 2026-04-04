@@ -3,25 +3,28 @@ import { motion } from 'framer-motion'
 import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
+import { Badge } from '@/components/ui/badge'
 import { Pagination, ConfirmDialog } from '@/components/common'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { deleteShop, toggleShopStatus } from '@/redux/slices/shopSlice'
 import type { Shop } from '@/types'
 import { toast } from '@/utils/toast'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditShopModal } from './AddEditShopModal'
+import {
+  useGetShopsQuery,
+  useDeleteShopMutation,
+} from '@/redux/api/shopManagementApi'
+import { apiStoreToShop } from '@/redux/packageTypes/shop'
+
+const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 function ShopCard({
   shop,
   onEdit,
   onDelete,
-  onToggle,
 }: {
   shop: Shop
   onEdit: (s: Shop) => void
   onDelete: (s: Shop) => void
-  onToggle: (s: Shop) => void
 }) {
   return (
     <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -38,10 +41,9 @@ function ShopCard({
           </div>
         )}
         <div className="absolute top-3 right-3">
-          <Switch
-            checked={shop.isActive}
-            onCheckedChange={() => onToggle(shop)}
-          />
+          <Badge variant={shop.isActive ? 'default' : 'secondary'}>
+            {shop.isActive ? 'Active' : 'Inactive'}
+          </Badge>
         </div>
       </div>
       <CardHeader className="pb-2 pt-4">
@@ -97,28 +99,44 @@ function ShopCard({
 }
 
 export default function ShopList() {
-  const dispatch = useAppDispatch()
-  const shops = useAppSelector((s) => s.shops.filteredList)
-
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
+  const [search, setSearch] = useState('')
+  const [debouncedSearch, setDebouncedSearch] = useState('')
+
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<Shop | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
+  const [deleteShop, { isLoading: isDeleteLoading }] = useDeleteShopMutation()
+
+  const { data, isLoading, isFetching, error } = useGetShopsQuery({
+    page,
+    limit,
+    search: debouncedSearch || undefined,
+  })
+
+  const shops: Shop[] = useMemo(
+    () => (data?.items ?? []).map((item) => apiStoreToShop(item, API_BASE)),
+    [data?.items]
+  )
+
   const selected = shops.find((s) => s.id === editingId) ?? null
 
-  const paginatedShops = useMemo(() => {
-    const start = (page - 1) * limit
-    return shops.slice(start, start + limit)
-  }, [shops, page, limit])
-
-  const totalPages = Math.ceil(shops.length / limit)
+  const pagination = data?.pagination
+  const totalItems = pagination?.total ?? 0
+  const totalPages = pagination?.totalPage ?? Math.max(1, Math.ceil(totalItems / limit))
 
   const handlePageChange = (newPage: number) => setPage(newPage)
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit)
+    setPage(1)
+  }
+
+  const handleSearchSubmit = (e: React.FormEvent) => {
+    e.preventDefault()
+    setDebouncedSearch(search.trim())
     setPage(1)
   }
 
@@ -135,14 +153,21 @@ export default function ShopList() {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      await new Promise((r) => setTimeout(r, 300))
-      dispatch(deleteShop(deleteTarget.id))
+      await deleteShop({ id: deleteTarget.id }).unwrap()
       toast({ title: 'Deleted', description: 'Shop removed.' })
       setDeleteTarget(null)
+    } catch {
+      toast({
+        title: 'Delete failed',
+        description: 'Could not delete the shop.',
+        variant: 'destructive',
+      })
     } finally {
       setIsDeleting(false)
     }
   }
+
+  const listBusy = isLoading || isFetching
 
   return (
     <motion.div
@@ -152,34 +177,54 @@ export default function ShopList() {
       className="space-y-6"
     >
       <Card className="bg-white border-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between">
+        <CardHeader className="flex flex-row items-center justify-between gap-4 flex-wrap">
           <div>
             <CardTitle className="text-xl font-bold text-slate-800">
               Shops
             </CardTitle>
             <p className="text-sm text-muted-foreground mt-1">
-              Manage your shops with name, contact, location, hours, and more
+              Manage stores: name, contact, address, hours, and image
             </p>
           </div>
-          <Button onClick={handleAdd} className="bg-primary text-white">
-            <Plus className="h-4 w-4 mr-2" />
-            Add Shop
-          </Button>
+          <div className="flex flex-wrap items-center gap-2">
+            <form onSubmit={handleSearchSubmit} className="flex gap-2">
+              <input
+                type="search"
+                placeholder="Search shops…"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                className="h-9 rounded-md border border-input bg-background px-3 text-sm w-[200px] md:w-[240px]"
+              />
+              <Button type="submit" variant="secondary" size="sm">
+                Search
+              </Button>
+            </form>
+            <Button onClick={handleAdd} className="bg-primary text-white">
+              <Plus className="h-4 w-4 mr-2" />
+              Add Shop
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
-          {shops.length === 0 ? (
+          {error && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 px-3 py-2 text-sm text-destructive">
+              Failed to load shops. Check the API URL and your session.
+            </div>
+          )}
+          {listBusy && !data ? (
+            <div className="py-12 text-center text-muted-foreground">Loading shops…</div>
+          ) : shops.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
-              No shops yet. Add one to get started.
+              No shops found.
             </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {paginatedShops.map((shop) => (
+              {shops.map((shop) => (
                 <ShopCard
                   key={shop.id}
                   shop={shop}
                   onEdit={handleEdit}
                   onDelete={setDeleteTarget}
-                  onToggle={(s) => dispatch(toggleShopStatus(s.id))}
                 />
               ))}
             </div>
@@ -187,7 +232,7 @@ export default function ShopList() {
           <Pagination
             currentPage={page}
             totalPages={totalPages}
-            totalItems={shops.length}
+            totalItems={totalItems}
             itemsPerPage={limit}
             onPageChange={handlePageChange}
             onItemsPerPageChange={handleLimitChange}
@@ -206,13 +251,13 @@ export default function ShopList() {
       />
       <ConfirmDialog
         open={!!deleteTarget}
-        onClose={() => !isDeleting && setDeleteTarget(null)}
+        onClose={() => !isDeleting && !isDeleteLoading && setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         title="Delete Shop"
         description={`Are you sure you want to delete "${deleteTarget?.shopName}"?`}
         confirmText="Delete"
         variant="danger"
-        isLoading={isDeleting}
+        isLoading={isDeleting || isDeleteLoading}
       />
     </motion.div>
   )

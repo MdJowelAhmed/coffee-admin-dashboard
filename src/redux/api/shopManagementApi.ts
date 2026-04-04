@@ -1,67 +1,87 @@
 import { baseApi } from '../baseApi'
 import type {
-  CreateCustomizeBody,
-  CustomizeListResult,
-  GetCustomizeApiResponse,
-  UpdateCustomizeBody,
-} from '../packageTypes/customize'
+  GetStoresApiResponse,
+  StoreDataPayload,
+  StoreListResult,
+} from '../packageTypes/shop'
 
-export type GetCustomizeArgs = {
+export type GetShopsArgs = {
   page: number
   limit: number
   search?: string
-  type?: 'milk' | 'syrup'
+}
+
+export type CreateShopArgs = {
+  data: StoreDataPayload
+  image: File
+}
+
+export type UpdateShopArgs = {
+  id: string
+  data: StoreDataPayload
+  /** Omit or pass only when replacing the image */
+  image?: File | null
 }
 
 const shopManagementApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
-    getShops: builder.query<CustomizeListResult, GetCustomizeArgs>({
-      query: ({ page, limit, search, type }) => ({
+    getShops: builder.query<StoreListResult, GetShopsArgs>({
+      query: ({ page, limit, search }) => ({
         url: '/admin/stores',
         method: 'GET',
         params: {
           page,
           limit,
           ...(search?.trim() ? { search: search.trim() } : {}),
-          ...(type ? { type } : {}),
         },
       }),
-      transformResponse: (response: GetCustomizeApiResponse): CustomizeListResult => ({
+      transformResponse: (response: GetStoresApiResponse): StoreListResult => ({
         items: response.data ?? [],
         pagination: response.pagination,
       }),
-      providesTags: ['Customize'],
+      providesTags: ['Stores'],
     }),
-    createShop: builder.mutation<unknown, CreateCustomizeBody>({
-      query: (body) => ({
-        url: '/admin/stores',
-        method: 'POST',
-        body,
-      }),
-      invalidatesTags: ['Customize'],
+    createShop: builder.mutation<unknown, CreateShopArgs>({
+      query: ({ data, image }) => {
+        const formData = new FormData()
+        formData.append('data', JSON.stringify(data))
+        formData.append('image', image)
+        return {
+          url: '/admin/stores',
+          method: 'POST',
+          body: formData,
+        }
+      },
+      invalidatesTags: ['Stores'],
     }),
-    updateShop: builder.mutation<unknown, UpdateCustomizeBody>({
-      query: ({ id, ...body }) => ({
-        url: `/admin/stores/${id}`,
-        method: 'PATCH',
-        body,
-      }),
-      invalidatesTags: ['Customize'],
+    updateShop: builder.mutation<unknown, UpdateShopArgs>({
+      query: ({ id, data, image }) => {
+        const formData = new FormData()
+        formData.append('data', JSON.stringify(data))
+        if (image) {
+          formData.append('image', image)
+        }
+        return {
+          url: `/admin/stores/${id}`,
+          method: 'PATCH',
+          body: formData,
+        }
+      },
+      invalidatesTags: ['Stores'],
     }),
     deleteShop: builder.mutation<unknown, { id: string }>({
       query: ({ id }) => ({
-        url: `/admin/stores/${id}`,
+        url: `/admin/stores/${id}/soft`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Customize'],
+      invalidatesTags: ['Stores'],
     }),
   }),
 })
 
 export const {
-    useGetShopsQuery,
-    useCreateShopMutation,
-    useUpdateShopMutation,
-    useDeleteShopMutation,
-
+  useGetShopsQuery,
+  useCreateShopMutation,
+  useUpdateShopMutation,
+  useDeleteShopMutation,
 } = shopManagementApi

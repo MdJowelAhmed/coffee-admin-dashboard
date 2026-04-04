@@ -4,10 +4,12 @@ import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ModalWrapper, FormInput, FormSelect } from '@/components/common'
 import { Button } from '@/components/ui/button'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
+import { useAppDispatch } from '@/redux/hooks'
 import { addController } from '@/redux/slices/controllerSlice'
 import type { Controller, ControllerRole, Shop } from '@/types'
 import { toast } from '@/utils/toast'
+import { useGetShopsQuery } from '@/redux/api/shopManagementApi'
+import { apiStoreToShop } from '@/redux/packageTypes/shop'
 
 const SHOP_NONE = '__none__'
 
@@ -27,9 +29,16 @@ interface AddControllerModalProps {
   onClose: () => void
 }
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL
+
 export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
   const dispatch = useAppDispatch()
-  const shops = useAppSelector((s) => s.shops.filteredList)
+  const { data: shopsData } = useGetShopsQuery(
+    { page: 1, limit: 500 },
+    { skip: !open }
+  )
+  const shops: Shop[] =
+    shopsData?.items.map((item) => apiStoreToShop(item, API_BASE)) ?? []
 
   const {
     register,
