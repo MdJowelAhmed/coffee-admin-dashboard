@@ -1,4 +1,4 @@
-import React, { useState } from 'react'
+import { useEffect, useRef, useState, type ChangeEvent } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,67 +10,131 @@ import { Separator } from '@/components/ui/separator'
 import { FormInput } from '@/components/common'
 import { toast } from '@/utils/toast'
 import { motion } from 'framer-motion'
+import {
+  useGetMyProfileQuery,
+  useUpdateMyProfileMutation,
+} from '@/redux/api/authApi'
+import { resolveMediaUrl } from '@/utils/mediaUrl'
+import { getInitials } from '@/utils/formatters'
 
 const profileSchema = z.object({
-  firstName: z.string().min(2, 'First name must be at least 2 characters'),
-  lastName: z.string().min(2, 'Last name must be at least 2 characters'),
+  name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Please enter a valid email'),
-  phone: z.string().min(10, 'Please enter a valid phone number'),
+  phone: z.string().optional(),
   address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  bio: z.string().max(500, 'Bio must be less than 500 characters').optional(),
 })
 
 type ProfileFormData = z.infer<typeof profileSchema>
 
+function displayAvatarSrc(
+  serverProfileImage: string | undefined,
+  serverImage: string | undefined,
+  localPreview: string | null
+): string {
+  if (localPreview) return localPreview
+  const raw = (serverProfileImage || serverImage || '').trim()
+  if (!raw) return ''
+  return resolveMediaUrl(raw)
+}
+
 export default function ProfileSettings() {
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [avatar, setAvatar] = useState('https://api.dicebear.com/7.x/avataaars/svg?seed=Admin')
+  const { data: profileRes, isLoading: isLoadingProfile } = useGetMyProfileQuery()
+  const [updateProfile, { isLoading: isSaving }] = useUpdateMyProfileMutation()
+
+  const profile = profileRes?.data
+  const [avatarPreview, setAvatarPreview] = useState<string | null>(null)
+  const [selectedFile, setSelectedFile] = useState<File | null>(null)
+  const objectUrlRef = useRef<string | null>(null)
 
   const {
     register,
     handleSubmit,
+    reset,
     formState: { errors },
   } = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
-      firstName: 'Jowel',
-      lastName: 'Ahmed',
-      email: 'mdjowelahmed924@gmail.com',
-      phone: '+1234567890',
-      address: '123 Main Street',
-      city: 'Dhaka',
-      country: 'Bangladesh',
-      // bio: 'Dashboard administrator with full access to all features.',
+      name: '',
+      email: '',
+      phone: '',
+      address: '',
     },
   })
 
-  const handleAvatarChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+  useEffect(() => {
+    if (!profile) return
+    reset({
+      name: profile.name ?? '',
+      email: profile.email ?? '',
+      phone: profile.phone ?? '',
+      address: profile.address ?? '',
+    })
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+      objectUrlRef.current = null
+    }
+    setSelectedFile(null)
+    setAvatarPreview(null)
+  }, [profile, reset])
+
+  const handleAvatarChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
-    if (file) {
-      const reader = new FileReader()
-      reader.onload = () => {
-        setAvatar(reader.result as string)
+    if (!file) return
+    if (objectUrlRef.current) {
+      URL.revokeObjectURL(objectUrlRef.current)
+    }
+    const url = URL.createObjectURL(file)
+    objectUrlRef.current = url
+    setSelectedFile(file)
+    setAvatarPreview(url)
+    e.target.value = ''
+  }
+
+  const onSubmit = async (form: ProfileFormData) => {
+    try {
+      await updateProfile({
+        name: form.name.trim(),
+        phone: form.phone ?? '',
+        address: form.address ?? '',
+        image: selectedFile ?? undefined,
+      }).unwrap()
+
+      toast({
+        title: 'Profile updated',
+        description: 'Your profile has been updated successfully.',
+      })
+
+      if (objectUrlRef.current) {
+        URL.revokeObjectURL(objectUrlRef.current)
+        objectUrlRef.current = null
       }
-      reader.readAsDataURL(file)
+      setSelectedFile(null)
+      setAvatarPreview(null)
+    } catch {
+      toast({
+        title: 'Update failed',
+        description: 'Could not save profile. Please try again.',
+        variant: 'destructive',
+      })
     }
   }
 
-  const onSubmit = async (data: ProfileFormData) => {
-    setIsSubmitting(true)
-    
-    // Simulate API call
-    await new Promise((resolve) => setTimeout(resolve, 1500))
-    
-    console.log('Profile data:', data)
-    
-    toast({
-      title: 'Profile Updated',
-      description: 'Your profile has been updated successfully.',
-    })
-    
-    setIsSubmitting(false)
+  const avatarSrc = displayAvatarSrc(
+    profile?.profileImage,
+    profile?.image,
+    avatarPreview
+  )
+  const initials = getInitials(
+    profile?.name?.split(/\s+/)[0],
+    profile?.name?.split(/\s+/).slice(1).join(' ')
+  )
+
+  if (isLoadingProfile && !profile) {
+    return (
+      <div className="max-w-4xl mx-auto py-12 text-center text-sm text-muted-foreground">
+        Loading profile…
+      </div>
+    )
   }
 
   return (
@@ -89,12 +153,13 @@ export default function ProfileSettings() {
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-8">
-            {/* Avatar Section */}
             <div className="flex items-center gap-6">
               <div className="relative">
                 <Avatar className="h-24 w-24">
-                  <AvatarImage src={avatar} />
-                  <AvatarFallback>AD</AvatarFallback>
+                  <AvatarImage src={avatarSrc || undefined} />
+                  <AvatarFallback className="text-lg">
+                    {initials || '—'}
+                  </AvatarFallback>
                 </Avatar>
                 <label
                   htmlFor="avatar-upload"
@@ -120,39 +185,31 @@ export default function ProfileSettings() {
 
             <Separator />
 
-            {/* Personal Information */}
             <div className="space-y-4">
               <h3 className="font-semibold">Personal Information</h3>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormInput
-                  label="First Name"
-                  placeholder="Enter first name"
-                  error={errors.firstName?.message}
+                  label="Full name"
+                  placeholder="Your name"
+                  error={errors.name?.message}
                   required
-                  {...register('firstName')}
+                  {...register('name')}
                 />
                 <FormInput
-                  label="Last Name"
-                  placeholder="Enter last name"
-                  error={errors.lastName?.message}
-                  required
-                  {...register('lastName')}
+                  label="Email"
+                  type="email"
+                  placeholder="Email"
+                  error={errors.email?.message}
+                  readOnly
+                  className="bg-muted/50"
+                  {...register('email')}
                 />
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
                 <FormInput
-                  label="Email"
-                  type="email"
-                  placeholder="Enter email"
-                  error={errors.email?.message}
-                  required
-                  {...register('email')}
-                />
-                <FormInput
                   label="Phone"
-                  placeholder="Enter phone number"
+                  placeholder="Phone number"
                   error={errors.phone?.message}
-                  required
                   {...register('phone')}
                 />
               </div>
@@ -160,40 +217,18 @@ export default function ProfileSettings() {
 
             <Separator />
 
-            {/* Address Information */}
             <div className="space-y-4">
               <h3 className="font-semibold">Address</h3>
               <FormInput
-                label="Street Address"
-                placeholder="Enter street address"
+                label="Street address"
+                placeholder="Address"
                 error={errors.address?.message}
                 {...register('address')}
               />
-              <div className="grid gap-4 sm:grid-cols-2">
-                <FormInput
-                  label="City"
-                  placeholder="Enter city"
-                  error={errors.city?.message}
-                  {...register('city')}
-                />
-                <FormInput
-                  label="Country"
-                  placeholder="Enter country"
-                  error={errors.country?.message}
-                  {...register('country')}
-                />
-              </div>
             </div>
 
-            <Separator />
-
-        
-
             <div className="flex justify-end gap-3">
-              <Button type="button" variant="outline">
-                Cancel
-              </Button>
-              <Button type="submit" isLoading={isSubmitting}>
+              <Button type="submit" disabled={isSaving} isLoading={isSaving}>
                 Save Changes
               </Button>
             </div>
@@ -203,15 +238,3 @@ export default function ProfileSettings() {
     </motion.div>
   )
 }
-
-
-
-
-
-
-
-
-
-
-
-

@@ -47,36 +47,49 @@ interface ResetPasswordResponse {
     message: string;
 }
 
+/** User row from GET /users/profile */
+export interface ProfileUserData {
+    _id: string;
+    name: string;
+    email: string;
+    phone?: string;
+    address?: string;
+    /** Preferred image field from API */
+    profileImage?: string;
+    /** Alternate image field (some responses use both) */
+    image?: string;
+    role: string;
+    status?: string;
+    permissions?: unknown[];
+    isPhoneVerified?: boolean;
+    isEmailVerified?: boolean;
+    authProviders?: unknown[];
+    deviceToken?: string | null;
+    isVerified: boolean;
+    isDeleted?: boolean;
+    createdAt: string;
+    updatedAt: string;
+    __v?: number;
+}
+
 export interface GetMyProfileResponse {
     success: boolean;
     message: string;
-    data: {
-        _id: string;
-        name: string;
-        email: string;
-        role: string;
-        profileImage?: string;
-        status: string;
-        isVerified: boolean;
-        isPhoneVerified: boolean;
-        isEmailVerified: boolean;
-        isDeleted: boolean;
-        authProviders: string[];
-        createdAt: string;
-        updatedAt: string;
-        __v: number;
-    };
+    data: ProfileUserData;
 }
 
 interface UpdateMyProfileResponse {
     success: boolean;
     message: string;
-    data: GetMyProfileResponse['data'];
+    data: ProfileUserData;
 }
 
+/** PATCH /users/profile — sent as multipart/form-data (file field name: `image`) */
 export interface UpdateMyProfilePayload {
-    name?: string;
-    profileImage?: File | null;
+    name: string;
+    image?: File | null;
+    phone?: string;
+    address?: string;
 }
 
 const authApi = baseApi.injectEndpoints({
@@ -197,15 +210,21 @@ const authApi = baseApi.injectEndpoints({
         }),
 
         updateMyProfile: builder.mutation<UpdateMyProfileResponse, UpdateMyProfilePayload>({
-            query: ({ name, profileImage }) => {
+            query: ({ name, image, phone, address }) => {
                 const formData = new FormData();
 
-                if (name) {
-                    formData.append('name', name);
+                formData.append('name', name.trim());
+
+                if (phone !== undefined) {
+                    formData.append('phone', phone);
                 }
 
-                if (profileImage) {
-                    formData.append('profileImage', profileImage);
+                if (address !== undefined) {
+                    formData.append('address', address);
+                }
+
+                if (image) {
+                    formData.append('image', image);
                 }
 
                 return {
