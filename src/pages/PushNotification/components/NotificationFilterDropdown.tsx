@@ -9,26 +9,25 @@ import {
 import { cn } from '@/utils/cn'
 import { NOTIFICATION_TYPES } from '../constants'
 
-const statusOptions = [
-  { value: 'all', label: 'All Status' },
-  { value: 'Sent', label: 'Sent' },
-  { value: 'Pending', label: 'Pending' },
-  { value: 'Failed', label: 'Failed' },
+const readOptions = [
+  { value: 'all', label: 'All' },
+  { value: 'Read', label: 'Read' },
+  { value: 'Unread', label: 'Unread' },
 ] as const
 
 interface NotificationFilterDropdownProps {
   typeValue: string
-  statusValue: string
+  readValue: string
   onTypeChange: (value: string) => void
-  onStatusChange: (value: string) => void
+  onReadChange: (value: string) => void
   className?: string
 }
 
 export function NotificationFilterDropdown({
   typeValue,
-  statusValue,
+  readValue,
   onTypeChange,
-  onStatusChange,
+  onReadChange,
   className,
 }: NotificationFilterDropdownProps) {
   return (
@@ -36,39 +35,41 @@ export function NotificationFilterDropdown({
       <Select value={typeValue} onValueChange={onTypeChange}>
         <SelectTrigger
           className={cn(
-            'w-40 bg-secondary text-white hover:bg-primary/90 border-primary rounded-md',
+            'w-44 bg-secondary text-white hover:bg-primary/90 border-primary rounded-md',
             'focus:ring-primary focus:ring-offset-0'
           )}
         >
           <div className="flex items-center gap-2">
             <Filter className="h-4 w-4 shrink-0" />
             <SelectValue placeholder="Type" />
-            {/* <ChevronDown className="h-4 w-4 ml-auto" /> */}
           </div>
         </SelectTrigger>
         <SelectContent>
           <SelectItem value="all" className="cursor-pointer">
-            All Types
+            All types
           </SelectItem>
           {NOTIFICATION_TYPES.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value} className="cursor-pointer">
+            <SelectItem
+              key={opt.value}
+              value={opt.value}
+              className="cursor-pointer"
+            >
               {opt.label}
             </SelectItem>
           ))}
         </SelectContent>
       </Select>
-      <Select value={statusValue} onValueChange={onStatusChange}>
+      <Select value={readValue} onValueChange={onReadChange}>
         <SelectTrigger
           className={cn(
             'w-40 bg-secondary text-white hover:bg-primary/90 border-primary rounded-md',
             'focus:ring-primary focus:ring-offset-0'
           )}
         >
-          <SelectValue placeholder="Status" />
-          {/* <ChevronDown className="h-4 w-4 ml-auto" /> */}
+          <SelectValue placeholder="Read status" />
         </SelectTrigger>
         <SelectContent>
-          {statusOptions.map((option) => (
+          {readOptions.map((option) => (
             <SelectItem
               key={option.value}
               value={option.value}

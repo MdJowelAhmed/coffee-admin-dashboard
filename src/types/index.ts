@@ -52,21 +52,30 @@ export interface SendMailPayload {
 }
 
 // ==================== Push Notification Types ====================
-export type NotificationType = 'Promotion' | 'Order Update' | 'Announcement' | 'Reminder'
+/** Values accepted by POST /notifications/send-notification */
+export type NotificationApiType =
+  | 'ORDER'
+  | 'PAYMENT'
+  | 'PROMOTION'
+  | 'SYSTEM'
+  | 'DAILY_SPECIAL'
+  | 'NEW_DRINK'
 
 export interface PushNotification {
   id: string
   title: string
   message: string
-  type: NotificationType
+  type: NotificationApiType
   date: string
-  status: 'Sent' | 'Pending' | 'Failed'
+  status: 'Read' | 'Unread'
+  receiverName?: string
+  receiverEmail?: string
 }
 
 export interface SendNotificationPayload {
   title: string
   message: string
-  type: NotificationType
+  type: NotificationApiType
 }
 
 // ==================== Product Types ====================

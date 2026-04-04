@@ -228,7 +228,7 @@ const authApi = baseApi.injectEndpoints({
                 }
 
                 return {
-                    url: '/users/profile',
+                    url: '/admin/profile',
                     method: 'PATCH',
                     body: formData,
                 };

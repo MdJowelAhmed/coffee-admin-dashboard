@@ -17,7 +17,6 @@ import syrupTypeReducer from './slices/syrupTypeSlice'
 import shopCategoryReducer from './slices/shopCategorySlice'
 import shopReducer from './slices/shopSlice'
 import shopProductReducer from './slices/shopProductSlice'
-import pushNotificationReducer from './slices/pushNotificationSlice'
 import controllerReducer from './slices/controllerSlice'
 import { baseApi } from './baseApi'
 
@@ -42,7 +41,6 @@ export const store = configureStore({
     shopCategories: shopCategoryReducer,
     shops: shopReducer,
     shopProducts: shopProductReducer,
-    pushNotifications: pushNotificationReducer,
     controllers: controllerReducer,
   },
   middleware: (getDefaultMiddleware) =>

@@ -18,24 +18,23 @@ import {
 } from '@/components/ui/select'
 import { cn } from '@/utils/cn'
 import { toast } from '@/utils/toast'
-import type { SendNotificationPayload } from '@/types'
+import { useSendPushNotificationMutation } from '@/redux/api/pushNotificationApi'
+import type { NotificationApiType } from '@/types'
 import { NOTIFICATION_TYPES } from '../constants'
 
 interface SendNotificationModalProps {
   open: boolean
   onClose: () => void
-  onSent?: (payload: SendNotificationPayload) => void | Promise<void>
 }
 
 export function SendNotificationModal({
   open,
   onClose,
-  onSent,
 }: SendNotificationModalProps) {
   const [title, setTitle] = useState('')
   const [message, setMessage] = useState('')
-  const [type, setType] = useState<string>('')
-  const [isLoading, setIsLoading] = useState(false)
+  const [type, setType] = useState<NotificationApiType | ''>('')
+  const [sendNotification, { isLoading }] = useSendPushNotificationMutation()
 
   const handleClose = () => {
     setTitle('')
@@ -70,24 +69,17 @@ export function SendNotificationModal({
       return
     }
 
-    setIsLoading(true)
     try {
-      const payload: SendNotificationPayload = {
+      await sendNotification({
         title: title.trim(),
         message: message.trim(),
-        type: type as SendNotificationPayload['type'],
-      }
-
-      if (onSent) {
-        await onSent(payload)
-      } else {
-        await new Promise((r) => setTimeout(r, 800))
-        toast({
-          title: 'Success',
-          description: 'Notification sent successfully.',
-          variant: 'success',
-        })
-      }
+        type,
+      }).unwrap()
+      toast({
+        title: 'Success',
+        description: 'Notification sent successfully.',
+        variant: 'success',
+      })
       handleClose()
     } catch {
       toast({
@@ -95,8 +87,6 @@ export function SendNotificationModal({
         description: 'Failed to send notification. Please try again.',
         variant: 'destructive',
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -110,12 +100,11 @@ export function SendNotificationModal({
       >
         <DialogHeader className="border-b pb-4">
           <DialogTitle className="text-left text-lg font-bold text-slate-800">
-            Write a message
+            Send a notification
           </DialogTitle>
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4 overflow-y-auto">
-          {/* Title */}
           <div className="space-y-2">
             <Label
               htmlFor="notification-title"
@@ -127,12 +116,11 @@ export function SendNotificationModal({
               id="notification-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="New Offer"
+              placeholder="New Coffee Today"
               className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
 
-          {/* Message */}
           <div className="space-y-2">
             <Label
               htmlFor="notification-message"
@@ -144,13 +132,12 @@ export function SendNotificationModal({
               id="notification-message"
               value={message}
               onChange={(e) => setMessage(e.target.value)}
-              placeholder="New Offer..."
+              placeholder="Hi, there is new coffee just for you"
               rows={4}
               className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary resize-none"
             />
           </div>
 
-          {/* Type */}
           <div className="space-y-2">
             <Label
               htmlFor="notification-type"
@@ -158,7 +145,10 @@ export function SendNotificationModal({
             >
               Type
             </Label>
-            <Select value={type} onValueChange={setType}>
+            <Select
+              value={type || undefined}
+              onValueChange={(v) => setType(v as NotificationApiType)}
+            >
               <SelectTrigger
                 id="notification-type"
                 className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary"
@@ -177,14 +167,6 @@ export function SendNotificationModal({
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          {/* <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            className="border-primary text-primary hover:bg-primary/10"
-          >
-            Cancel
-          </Button> */}
           <Button
             type="button"
             onClick={handleSent}
@@ -192,7 +174,7 @@ export function SendNotificationModal({
             isLoading={isLoading}
             className="bg-primary text-white hover:bg-primary/90"
           >
-            Send Notification
+            Send notification
           </Button>
         </div>
       </DialogContent>

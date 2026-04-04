@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Bell } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -8,54 +8,77 @@ import { Pagination } from '@/components/common/Pagination'
 import { NotificationTable } from './components/NotificationTable'
 import { NotificationFilterDropdown } from './components/NotificationFilterDropdown'
 import { SendNotificationModal } from './components/SendNotificationModal'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import {
-  addNotification,
-  setFilters,
-  setPage,
-  setLimit,
-} from '@/redux/slices/pushNotificationSlice'
+import { useGetPushNotificationsQuery } from '@/redux/api/pushNotificationApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
-import type { SendNotificationPayload } from '@/types'
-import { format } from 'date-fns'
 
 export default function PushNotificationList() {
-  const dispatch = useAppDispatch()
   const [showSendModal, setShowSendModal] = useState(false)
 
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
   const [typeFilter, setTypeFilter] = useUrlString('type', 'all')
-  const [statusFilter, setStatusFilter] = useUrlString('status', 'all')
+  const [readFilter, setReadFilter] = useUrlString('read', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 
-  const { filteredList, pagination } = useAppSelector(
-    (state) => state.pushNotifications
-  )
-
+  const [searchForApi, setSearchForApi] = useState(searchQuery)
   useEffect(() => {
-    dispatch(
-      setFilters({
-        search: searchQuery,
-        type: typeFilter,
-        status: statusFilter,
-      })
-    )
-  }, [searchQuery, typeFilter, statusFilter, dispatch])
+    setSearchForApi(searchQuery)
+  }, [searchQuery])
 
+  const isReadParam = useMemo(() => {
+    if (readFilter === 'Read') return true
+    if (readFilter === 'Unread') return false
+    return undefined
+  }, [readFilter])
+
+  const { data, isFetching, isError } = useGetPushNotificationsQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchForApi,
+    type: typeFilter,
+    isRead: isReadParam,
+  })
+
+  const prevSearchRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(setPage(currentPage))
-  }, [currentPage, dispatch])
+    if (prevSearchRef.current === null) {
+      prevSearchRef.current = searchQuery
+      return
+    }
+    if (prevSearchRef.current !== searchQuery) {
+      prevSearchRef.current = searchQuery
+      setCurrentPage(1)
+    }
+  }, [searchQuery, setCurrentPage])
 
+  const prevTypeRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(setLimit(itemsPerPage))
-  }, [itemsPerPage, dispatch])
+    if (prevTypeRef.current === null) {
+      prevTypeRef.current = typeFilter
+      return
+    }
+    if (prevTypeRef.current !== typeFilter) {
+      prevTypeRef.current = typeFilter
+      setCurrentPage(1)
+    }
+  }, [typeFilter, setCurrentPage])
 
-  const totalPages = pagination.totalPages
-  const paginatedData = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit
-    return filteredList.slice(startIndex, startIndex + pagination.limit)
-  }, [filteredList, pagination.page, pagination.limit])
+  const prevReadRef = useRef<string | null>(null)
+  useEffect(() => {
+    if (prevReadRef.current === null) {
+      prevReadRef.current = readFilter
+      return
+    }
+    if (prevReadRef.current !== readFilter) {
+      prevReadRef.current = readFilter
+      setCurrentPage(1)
+    }
+  }, [readFilter, setCurrentPage])
+
+  const items = data?.items ?? []
+  const pagination = data?.pagination
+  const totalPages = Math.max(1, pagination?.totalPage ?? 1)
+  const totalItems = pagination?.total ?? 0
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -63,20 +86,19 @@ export default function PushNotificationList() {
 
   const handleItemsPerPageChange = (limit: number) => {
     setItemsPerPage(limit)
+    setCurrentPage(1)
   }
 
-  const handleNotificationSent = async (payload: SendNotificationPayload) => {
-    dispatch(
-      addNotification({
-        id: `n-${Date.now()}`,
-        title: payload.title,
-        message: payload.message,
-        type: payload.type,
-        date: format(new Date(), 'yyyy-MM-dd'),
-        status: 'Sent',
-      })
-    )
-  }
+  const handleSearchChange = useCallback(
+    (v: string) => {
+      setSearchForApi(v)
+      setSearchQuery(v)
+      setCurrentPage(1)
+    },
+    [setSearchQuery, setCurrentPage]
+  )
+
+  const showInitialLoading = isFetching && items.length === 0
 
   return (
     <motion.div
@@ -86,30 +108,27 @@ export default function PushNotificationList() {
       className="space-y-6"
     >
       <Card className="bg-white border-0 shadow-sm">
-        <CardHeader className="flex flex-row items-center justify-between pb-6">
+        <CardHeader className="flex flex-row items-center justify-between pb-6 flex-wrap gap-4">
           <CardTitle className="text-xl font-bold text-slate-800">
             Push Notifications
           </CardTitle>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
             <SearchInput
-              value={searchQuery}
-              onChange={(v) => {
-                setSearchQuery(v)
-                setCurrentPage(1)
-              }}
-              placeholder="Search title, message, type & status..."
-              className="w-[300px]"
+              value={searchForApi}
+              onChange={handleSearchChange}
+              placeholder="Search title, message, receiver..."
+              className="w-[280px]"
             />
 
             <NotificationFilterDropdown
               typeValue={typeFilter}
-              statusValue={statusFilter}
+              readValue={readFilter}
               onTypeChange={(v) => {
                 setTypeFilter(v)
                 setCurrentPage(1)
               }}
-              onStatusChange={(v) => {
-                setStatusFilter(v)
+              onReadChange={(v) => {
+                setReadFilter(v)
                 setCurrentPage(1)
               }}
             />
@@ -125,15 +144,27 @@ export default function PushNotificationList() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <NotificationTable notifications={paginatedData} />
+          {showInitialLoading ? (
+            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+              Loading notifications…
+            </div>
+          ) : null}
+          {isError && !isFetching ? (
+            <div className="px-6 py-8 text-center text-sm text-red-600">
+              Could not load notifications. Please try again.
+            </div>
+          ) : null}
+          {!showInitialLoading && !isError ? (
+            <NotificationTable notifications={items} />
+          ) : null}
 
           <div className="px-6 py-4 border-t border-gray-100">
             <Pagination
               variant="revenue"
-              currentPage={pagination.page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredList.length}
-              itemsPerPage={pagination.limit}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -144,7 +175,6 @@ export default function PushNotificationList() {
       <SendNotificationModal
         open={showSendModal}
         onClose={() => setShowSendModal(false)}
-        onSent={handleNotificationSent}
       />
     </motion.div>
   )
