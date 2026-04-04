@@ -15,6 +15,18 @@ const readOptions = [
   { value: 'Unread', label: 'Unread' },
 ] as const
 
+/** Keep Select controlled value in sync with URL / API (must match a SelectItem `value`) */
+function normalizeTypeValue(raw: string): string {
+  if (raw === 'all') return 'all'
+  if (NOTIFICATION_TYPES.some((t) => t.value === raw)) return raw
+  return 'all'
+}
+
+function normalizeReadValue(raw: string): string {
+  if (raw === 'all' || raw === 'Read' || raw === 'Unread') return raw
+  return 'all'
+}
+
 interface NotificationFilterDropdownProps {
   typeValue: string
   readValue: string
@@ -30,16 +42,20 @@ export function NotificationFilterDropdown({
   onReadChange,
   className,
 }: NotificationFilterDropdownProps) {
+  const safeType = normalizeTypeValue(typeValue)
+  const safeRead = normalizeReadValue(readValue)
+
   return (
     <div className={cn('flex items-center gap-2', className)}>
-      <Select value={typeValue} onValueChange={onTypeChange}>
+      <Select value={safeType} onValueChange={onTypeChange}>
         <SelectTrigger
           className={cn(
             'w-44 bg-secondary text-white hover:bg-primary/90 border-primary rounded-md',
-            'focus:ring-primary focus:ring-offset-0'
+            'focus:ring-primary focus:ring-offset-0',
+            '[&_svg.lucide]:text-white'
           )}
         >
-          <div className="flex items-center gap-2">
+          <div className="flex min-w-0 flex-1 items-center gap-2">
             <Filter className="h-4 w-4 shrink-0" />
             <SelectValue placeholder="Type" />
           </div>
@@ -59,11 +75,12 @@ export function NotificationFilterDropdown({
           ))}
         </SelectContent>
       </Select>
-      <Select value={readValue} onValueChange={onReadChange}>
+      <Select value={safeRead} onValueChange={onReadChange}>
         <SelectTrigger
           className={cn(
             'w-40 bg-secondary text-white hover:bg-primary/90 border-primary rounded-md',
-            'focus:ring-primary focus:ring-offset-0'
+            'focus:ring-primary focus:ring-offset-0',
+            '[&_svg.lucide]:text-white'
           )}
         >
           <SelectValue placeholder="Read status" />

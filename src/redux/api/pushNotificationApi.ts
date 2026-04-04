@@ -13,19 +13,20 @@ const pushNotificationApi = baseApi.injectEndpoints({
       PushNotificationListResult,
       GetPushNotificationsArgs
     >({
-      query: ({ page, limit, search, type, isRead }) => {
+      query: ({ page, limit, searchTerm, type, isRead }) => {
         const params: Record<string, string | number | boolean> = {
           page,
           limit,
         }
-        const term = search?.trim()
+        const term = searchTerm?.trim()
         if (term) {
-          params.search = term
           params.searchTerm = term
         }
+        // Backend filters by exact notification type (e.g. DAILY_SPECIAL, ORDER)
         if (type && type !== 'all') {
           params.type = type
         }
+        // Backend filters read/unread when present
         if (isRead !== undefined) {
           params.isRead = isRead
         }

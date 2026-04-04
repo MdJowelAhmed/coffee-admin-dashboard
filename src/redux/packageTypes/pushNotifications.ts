@@ -35,10 +35,11 @@ export type PushNotificationListResult = {
 export type GetPushNotificationsArgs = {
   page: number
   limit: number
-  search?: string
-  /** When not `"all"`, sent as `type` query param */
+  /** Sent as `searchTerm` query param (backend text search) */
+  searchTerm?: string
+  /** When not `"all"`, sent as `type` (backend enum, e.g. DAILY_SPECIAL) */
   type?: string
-  /** When set, sent as `isRead` query param */
+  /** When set, sent as `isRead` (backend boolean filter) */
   isRead?: boolean
 }
 
