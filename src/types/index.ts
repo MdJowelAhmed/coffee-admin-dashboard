@@ -226,9 +226,12 @@ export interface CarFilters {
 export interface Poster {
   id: string
   imageUrl: string
+  /** Promotion name from API */
   title: string
   description: string
   createdAt: string
+  updatedAt?: string
+  isActive?: boolean
 }
 
 // ==================== Pagination Types ====================

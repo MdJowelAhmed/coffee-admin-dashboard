@@ -7,7 +7,8 @@ interface DeletePosterModalProps {
   open: boolean
   onClose: () => void
   poster: Poster | null
-  onConfirm: () => void
+  onConfirm: () => void | Promise<void>
+  isDeleting?: boolean
 }
 
 export function DeletePosterModal({
@@ -15,12 +16,12 @@ export function DeletePosterModal({
   onClose,
   poster,
   onConfirm,
+  isDeleting = false,
 }: DeletePosterModalProps) {
   if (!poster) return null
 
-  const handleConfirm = () => {
-    onConfirm()
-    onClose()
+  const handleConfirm = async () => {
+    await onConfirm()
   }
 
   return (
@@ -53,6 +54,8 @@ export function DeletePosterModal({
           <Button
             type="button"
             onClick={handleConfirm}
+            disabled={isDeleting}
+            isLoading={isDeleting}
             className="bg-red-600 hover:bg-red-700 text-white"
           >
             Delete

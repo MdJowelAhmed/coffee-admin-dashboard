@@ -19,7 +19,6 @@ import shopReducer from './slices/shopSlice'
 import shopProductReducer from './slices/shopProductSlice'
 import pushNotificationReducer from './slices/pushNotificationSlice'
 import controllerReducer from './slices/controllerSlice'
-import adReducer from './slices/adSlice'
 import { baseApi } from './baseApi'
 
 export const store = configureStore({
@@ -45,7 +44,6 @@ export const store = configureStore({
     shopProducts: shopProductReducer,
     pushNotifications: pushNotificationReducer,
     controllers: controllerReducer,
-    ads: adReducer,
   },
   middleware: (getDefaultMiddleware) =>
     getDefaultMiddleware({
