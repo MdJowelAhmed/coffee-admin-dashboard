@@ -13,6 +13,9 @@ import {
 } from '@/redux/api/shopManagementApi'
 import type { StoreDataPayload } from '@/redux/packageTypes/shop'
 
+/** Radix Select cannot use `value=""`; use a sentinel for “no off day”. */
+const OFF_DAY_NONE = '__off_none__'
+
 const OFF_DAY_OPTIONS = [
   { value: 'Sunday', label: 'Sunday' },
   { value: 'Monday', label: 'Monday' },
@@ -21,6 +24,11 @@ const OFF_DAY_OPTIONS = [
   { value: 'Thursday', label: 'Thursday' },
   { value: 'Friday', label: 'Friday' },
   { value: 'Saturday', label: 'Saturday' },
+]
+
+const OFF_DAY_SELECT_OPTIONS = [
+  { value: OFF_DAY_NONE, label: 'No off day' },
+  ...OFF_DAY_OPTIONS,
 ]
 
 const schema = z.object({
@@ -79,12 +87,18 @@ export function AddEditShopModal({
       longitude: '',
       openTime: '09:00',
       closeTime: '18:00',
-      offDay: '',
+      offDay: OFF_DAY_NONE,
       aboutShop: '',
     },
   })
 
   const { ref: locationFieldRef, ...locationFieldRest } = register('location')
+
+  /**
+   * Hydrate the form only once per modal open / per shop id.
+   * Including `shop` in deps caused reset on every parent re-render (new object refs) and cleared edits.
+   */
+  const hydratedModalKeyRef = useRef<string | null>(null)
 
   /** Waits until the address input is in the DOM (modal paint), then binds Places Autocomplete. */
   useEffect(() => {
@@ -177,36 +191,54 @@ export function AddEditShopModal({
   }, [open, setValue])
 
   useEffect(() => {
-    if (open) {
-      if (isEdit && shop) {
-        reset({
-          shopName: shop.shopName,
-          contact: shop.contact,
-          location: shop.location,
-          latitude: shop.latitude ?? '',
-          longitude: shop.longitude ?? '',
-          openTime: shop.openTime,
-          closeTime: shop.closeTime,
-          offDay: shop.offDay || '',
-          aboutShop: shop.aboutShop,
-        })
-        setImage(shop.shopPicture || null)
-      } else {
-        reset({
-          shopName: '',
-          contact: '',
-          location: '',
-          latitude: '',
-          longitude: '',
-          openTime: '09:00',
-          closeTime: '18:00',
-          offDay: '',
-          aboutShop: '',
-        })
-        setImage(null)
-      }
+    if (!open) {
+      hydratedModalKeyRef.current = null
+      return
     }
-  }, [open, isEdit, shop, reset])
+
+    if (isEdit && editingId) {
+      if (!shop || shop.id !== editingId) return
+      const key = `edit:${editingId}`
+      if (hydratedModalKeyRef.current === key) return
+      hydratedModalKeyRef.current = key
+
+      const offDayVal =
+        shop.offDay && OFF_DAY_OPTIONS.some((o) => o.value === shop.offDay)
+          ? shop.offDay
+          : OFF_DAY_NONE
+
+      reset({
+        shopName: shop.shopName,
+        contact: shop.contact,
+        location: shop.location,
+        latitude: shop.latitude ?? '',
+        longitude: shop.longitude ?? '',
+        openTime: shop.openTime,
+        closeTime: shop.closeTime,
+        offDay: offDayVal,
+        aboutShop: shop.aboutShop,
+      })
+      setImage(shop.shopPicture ?? null)
+      return
+    }
+
+    if (!isEdit) {
+      if (hydratedModalKeyRef.current === 'create') return
+      hydratedModalKeyRef.current = 'create'
+      reset({
+        shopName: '',
+        contact: '',
+        location: '',
+        latitude: '',
+        longitude: '',
+        openTime: '09:00',
+        closeTime: '18:00',
+        offDay: OFF_DAY_NONE,
+        aboutShop: '',
+      })
+      setImage(null)
+    }
+  }, [open, isEdit, editingId, shop, reset])
 
   const DEFAULT_MAP_CENTER = { lat: 23.8103, lng: 90.4125 }
 
@@ -334,7 +366,10 @@ export function AddEditShopModal({
       about: data.aboutShop.trim(),
       openTime: data.openTime,
       closeTime: data.closeTime,
-      offDay: data.offDay?.trim() ?? '',
+      offDay:
+        !data.offDay || data.offDay === OFF_DAY_NONE
+          ? ''
+          : data.offDay.trim(),
     }
 
     try {
@@ -462,8 +497,8 @@ export function AddEditShopModal({
           render={({ field }) => (
             <FormSelect
               label="Off Day"
-              value={field.value || ''}
-              options={OFF_DAY_OPTIONS}
+              value={field.value || OFF_DAY_NONE}
+              options={OFF_DAY_SELECT_OPTIONS}
               onChange={field.onChange}
               placeholder="Select off day (optional)"
             />
@@ -482,7 +517,7 @@ export function AddEditShopModal({
         <div>
           <label className="text-sm font-medium mb-2 block">Shop Picture</label>
           <ImageUploader
-            key={isEdit && shop ? `${editingId}-${shop.updatedAt}` : 'new'}
+            key={editingId ? `shop-${editingId}` : 'shop-new'}
             value={image}
             onChange={(f) => setImage(f)}
           />

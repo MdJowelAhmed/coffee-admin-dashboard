@@ -92,25 +92,32 @@ export function deriveScheduleFromApiStore(item: ApiStoreItem): {
   closeTime: string
   offDay: string | undefined
 } {
+  const apiOffDay = item.offDay?.trim() || undefined
+
   if (item.openTime && item.closeTime) {
     return {
       openTime: normalizeTimeForInput(item.openTime),
       closeTime: normalizeTimeForInput(item.closeTime),
-      offDay: item.offDay || undefined,
+      offDay: apiOffDay,
     }
   }
   const hours = item.hours ?? []
   if (hours.length === 0) {
-    return { openTime: '09:00', closeTime: '18:00', offDay: undefined }
+    return {
+      openTime: '09:00',
+      closeTime: '18:00',
+      offDay: apiOffDay,
+    }
   }
   const monday = hours.find((h) => h.day === 'Monday')
   const pick = monday ?? hours[0]
   const present = new Set(hours.map((h) => h.day))
-  const offDay = WEEKDAYS.find((d) => !present.has(d))
+  const derivedOff = WEEKDAYS.find((d) => !present.has(d))
   return {
     openTime: normalizeTimeForInput(pick.open),
     closeTime: normalizeTimeForInput(pick.close),
-    offDay: offDay || undefined,
+    // Prefer explicit API offDay; else first weekday missing from `hours` (partial week)
+    offDay: apiOffDay ?? derivedOff ?? undefined,
   }
 }
 

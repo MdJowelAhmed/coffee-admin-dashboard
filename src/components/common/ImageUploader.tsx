@@ -1,4 +1,4 @@
-import React, { useCallback, useState } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import { useDropzone, type FileRejection } from 'react-dropzone'
 import { Upload, X, Image as ImageIcon } from 'lucide-react'
 import { Button } from '@/components/ui/button'
@@ -27,6 +27,19 @@ export function ImageUploader({
     typeof value === 'string' ? value : null
   )
   const [uploadError, setUploadError] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (value instanceof File) {
+      const url = URL.createObjectURL(value)
+      setPreview(url)
+      return () => URL.revokeObjectURL(url)
+    }
+    if (typeof value === 'string' && value.length > 0) {
+      setPreview(value)
+      return
+    }
+    setPreview(null)
+  }, [value])
 
   const onDrop = useCallback(
     (acceptedFiles: File[], fileRejections: FileRejection[]) => {
