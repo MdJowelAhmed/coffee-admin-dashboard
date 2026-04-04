@@ -29,8 +29,12 @@ export interface Subscriber {
   id: string
   userName: string
   email: string
+  /** ISO date string (typically subscribedAt) for display */
   date: string
   avatar?: string
+  isSubscribed?: boolean
+  subscribedAt?: string | null
+  unsubscribedAt?: string | null
 }
 
 export interface SubscriberFilters {
@@ -38,11 +42,13 @@ export interface SubscriberFilters {
   status: string
 }
 
+/** Body for POST /emailSubscriptions/send-email */
 export interface SendMailPayload {
-  dateFrom?: string
-  dateTo?: string
+  subject: string
   title: string
   description: string
+  startDate: string
+  endDate: string
 }
 
 // ==================== Push Notification Types ====================

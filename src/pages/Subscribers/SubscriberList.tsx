@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Mail } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -7,49 +7,51 @@ import { SearchInput } from '@/components/common/SearchInput'
 import { Pagination } from '@/components/common/Pagination'
 import { SubscriberTable } from './components/SubscriberTable'
 import { WriteMailModal } from './components/WriteMailModal'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
 import {
-  setFilters,
-  setPage,
-  setLimit,
-} from '@/redux/slices/subscriberSlice'
+  useGetSubscribersQuery,
+  useSendSubscriberEmailMutation,
+} from '@/redux/api/subscriberUserApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
-import type { Subscriber } from '@/types'
+import { toast } from '@/utils/toast'
 import type { SendMailPayload } from '@/types'
 
 export default function SubscriberList() {
-  const dispatch = useAppDispatch()
   const [showWriteMail, setShowWriteMail] = useState(false)
 
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
-  const [statusFilter] = useUrlString('status', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 
-  const { filteredList, pagination } = useAppSelector((state) => state.subscribers)
-
+  const [searchForApi, setSearchForApi] = useState(searchQuery)
   useEffect(() => {
-    dispatch(
-      setFilters({
-        search: searchQuery,
-        status: statusFilter,
-      })
-    )
-  }, [searchQuery, statusFilter, dispatch])
+    setSearchForApi(searchQuery)
+  }, [searchQuery])
 
+  const { data, isFetching, isError } = useGetSubscribersQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchForApi,
+  })
+
+  const [sendSubscriberEmail, { isLoading: isSendingMail }] =
+    useSendSubscriberEmailMutation()
+
+  const prevSearchRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(setPage(currentPage))
-  }, [currentPage, dispatch])
+    if (prevSearchRef.current === null) {
+      prevSearchRef.current = searchQuery
+      return
+    }
+    if (prevSearchRef.current !== searchQuery) {
+      prevSearchRef.current = searchQuery
+      setCurrentPage(1)
+    }
+  }, [searchQuery, setCurrentPage])
 
-  useEffect(() => {
-    dispatch(setLimit(itemsPerPage))
-  }, [itemsPerPage, dispatch])
-
-  const totalPages = pagination.totalPages
-  const paginatedData = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit
-    return filteredList.slice(startIndex, startIndex + pagination.limit)
-  }, [filteredList, pagination.page, pagination.limit])
+  const items = data?.items ?? []
+  const pagination = data?.pagination
+  const totalPages = Math.max(1, pagination?.totalPage ?? 1)
+  const totalItems = pagination?.total ?? 0
 
   const handlePageChange = (page: number) => {
     setCurrentPage(page)
@@ -57,16 +59,28 @@ export default function SubscriberList() {
 
   const handleItemsPerPageChange = (limit: number) => {
     setItemsPerPage(limit)
+    setCurrentPage(1)
   }
 
-  const handleLock = (_sub: Subscriber) => {
-    // Optional: open confirm dialog or call API to lock subscriber
+  const handleSearchChange = useCallback(
+    (v: string) => {
+      setSearchForApi(v)
+      setSearchQuery(v)
+      setCurrentPage(1)
+    },
+    [setSearchQuery, setCurrentPage]
+  )
+
+  const handleMailSent = async (payload: SendMailPayload) => {
+    await sendSubscriberEmail(payload).unwrap()
+    toast({
+      title: 'Success',
+      description: 'Message scheduled for subscribers.',
+      variant: 'success',
+    })
   }
 
-  const handleMailSent = async (_payload: SendMailPayload) => {
-    // Wire to API when endpoint is ready, e.g.:
-    // await subscriberApi.sendMail(payload)
-  }
+  const showInitialLoading = isFetching && items.length === 0
 
   return (
     <motion.div
@@ -82,22 +96,11 @@ export default function SubscriberList() {
           </CardTitle>
           <div className="flex items-center gap-3">
             <SearchInput
-              value={searchQuery}
-              onChange={(v) => {
-                setSearchQuery(v)
-                setCurrentPage(1)
-              }}
-              placeholder="Search name, email & Status..."
+              value={searchForApi}
+              onChange={handleSearchChange}
+              placeholder="Search email..."
               className="w-[300px]"
             />
-
-            {/* <SubscriberFilterDropdown
-              value={statusFilter}
-              onChange={(v) => {
-                setStatusFilter(v)
-                setCurrentPage(1)
-              }}
-            /> */}
 
             <Button
               className="bg-primary hover:bg-primary/90 text-white"
@@ -110,18 +113,27 @@ export default function SubscriberList() {
         </CardHeader>
 
         <CardContent className="p-0">
-          <SubscriberTable
-            subscribers={paginatedData}
-            onLock={handleLock}
-          />
+          {showInitialLoading ? (
+            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+              Loading subscribers...
+            </div>
+          ) : null}
+          {isError && !isFetching ? (
+            <div className="px-6 py-8 text-center text-sm text-red-600">
+              Could not load subscribers. Please try again.
+            </div>
+          ) : null}
+          {!showInitialLoading && !isError ? (
+            <SubscriberTable subscribers={items} />
+          ) : null}
 
           <div className="px-6 py-4 border-t border-gray-100">
             <Pagination
               variant="revenue"
-              currentPage={pagination.page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredList.length}
-              itemsPerPage={pagination.limit}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -133,6 +145,7 @@ export default function SubscriberList() {
         open={showWriteMail}
         onClose={() => setShowWriteMail(false)}
         onSent={handleMailSent}
+        isSending={isSendingMail}
       />
     </motion.div>
   )

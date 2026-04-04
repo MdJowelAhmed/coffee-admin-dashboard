@@ -162,7 +162,7 @@ export default function UserList() {
             <SearchInput
               value={searchForApi}
               onChange={handleSearchChange}
-              placeholder="Search name, ID & Status."
+              placeholder="Search emailname"
               className="w-[300px]"
             />
 

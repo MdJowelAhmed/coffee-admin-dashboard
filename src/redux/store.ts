@@ -17,7 +17,6 @@ import syrupTypeReducer from './slices/syrupTypeSlice'
 import shopCategoryReducer from './slices/shopCategorySlice'
 import shopReducer from './slices/shopSlice'
 import shopProductReducer from './slices/shopProductSlice'
-import subscriberReducer from './slices/subscriberSlice'
 import pushNotificationReducer from './slices/pushNotificationSlice'
 import controllerReducer from './slices/controllerSlice'
 import adReducer from './slices/adSlice'
@@ -44,7 +43,6 @@ export const store = configureStore({
     shopCategories: shopCategoryReducer,
     shops: shopReducer,
     shopProducts: shopProductReducer,
-    subscribers: subscriberReducer,
     pushNotifications: pushNotificationReducer,
     controllers: controllerReducer,
     ads: adReducer,

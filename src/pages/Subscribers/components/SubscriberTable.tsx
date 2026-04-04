@@ -5,13 +5,9 @@ import type { Subscriber } from '@/types'
 
 interface SubscriberTableProps {
   subscribers: Subscriber[]
-  onLock?: (subscriber: Subscriber) => void
 }
 
-export function SubscriberTable({
-  subscribers,
-  onLock: _onLock,
-}: SubscriberTableProps) {
+export function SubscriberTable({ subscribers }: SubscriberTableProps) {
   return (
     <div className="w-full overflow-auto">
       <table className="w-full min-w-[700px]">
@@ -29,7 +25,7 @@ export function SubscriberTable({
           {subscribers.length === 0 ? (
             <tr>
               <td
-                colSpan={4}
+                colSpan={3}
                 className="px-6 py-8 text-center text-muted-foreground"
               >
                 No subscribers found. Try adjusting your filters.
@@ -50,12 +46,12 @@ export function SubscriberTable({
                       <AvatarImage
                         src={
                           sub.avatar ||
-                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${sub.id}`
+                          `https://api.dicebear.com/7.x/avataaars/svg?seed=${encodeURIComponent(sub.email)}`
                         }
                       />
                       <AvatarFallback className="bg-slate-200 text-slate-700 text-sm">
                         {getInitials(
-                          sub.userName.split(' ')[0],
+                          sub.userName.split(' ')[0] ?? sub.email,
                           sub.userName.split(' ')[1]
                         )}
                       </AvatarFallback>

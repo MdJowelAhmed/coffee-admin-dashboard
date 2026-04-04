@@ -12,7 +12,7 @@ export const USER_ROLES: SelectOption[] = [
 export const USER_STATUSES: SelectOption[] = [
   { value: 'all', label: 'All Status' },
   { value: 'active', label: 'Active' },
-  { value: 'pending', label: 'Pending' },
+  // { value: 'pending', label: 'Pending' },
   { value: 'inactive', label: 'Inactive' },
 ]
 

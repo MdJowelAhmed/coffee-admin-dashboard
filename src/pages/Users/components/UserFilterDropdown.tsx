@@ -19,16 +19,14 @@ const statusFilterOptions = [
   { value: 'all', label: 'All Status' },
   { value: 'active', label: 'Active' },
   { value: 'inactive', label: 'Inactive' },
-  { value: 'blocked', label: 'Blocked' },
-  { value: 'pending', label: 'Pending' },
+  // { value: 'blocked', label: 'Blocked' },
+  // { value: 'pending', label: 'Pending' },
 ] as const
 
-const allowedStatus = new Set(
-  statusFilterOptions.map((o) => o.value)
-)
-
 function normalizeStatus(value: UserStatus | 'all'): UserStatus | 'all' {
-  if (value && allowedStatus.has(value)) return value
+  if (value === 'all' || value === 'active' || value === 'inactive') {
+    return value
+  }
   return 'all'
 }
 

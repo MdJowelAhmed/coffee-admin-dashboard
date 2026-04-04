@@ -18,20 +18,23 @@ interface WriteMailModalProps {
   open: boolean
   onClose: () => void
   onSent?: (payload: SendMailPayload) => void | Promise<void>
+  isSending?: boolean
 }
 
 export function WriteMailModal({
   open,
   onClose,
   onSent,
+  isSending = false,
 }: WriteMailModalProps) {
+  const [subject, setSubject] = useState('')
   const [dateFrom, setDateFrom] = useState('')
   const [dateTo, setDateTo] = useState('')
   const [title, setTitle] = useState('')
   const [description, setDescription] = useState('')
-  const [isLoading, setIsLoading] = useState(false)
 
   const handleClose = () => {
+    setSubject('')
     setDateFrom('')
     setDateTo('')
     setTitle('')
@@ -40,6 +43,14 @@ export function WriteMailModal({
   }
 
   const handleSent = async () => {
+    if (!subject.trim()) {
+      toast({
+        title: 'Validation',
+        description: 'Please enter a subject.',
+        variant: 'destructive',
+      })
+      return
+    }
     if (!title.trim()) {
       toast({
         title: 'Validation',
@@ -56,26 +67,26 @@ export function WriteMailModal({
       })
       return
     }
+    if (!dateFrom || !dateTo) {
+      toast({
+        title: 'Validation',
+        description: 'Please select both start and end date.',
+        variant: 'destructive',
+      })
+      return
+    }
 
-    setIsLoading(true)
+    const payload: SendMailPayload = {
+      subject: subject.trim(),
+      title: title.trim(),
+      description: description.trim(),
+      startDate: dateFrom,
+      endDate: dateTo,
+    }
+
     try {
-      const payload: SendMailPayload = {
-        title: title.trim(),
-        description: description.trim(),
-      }
-      if (dateFrom) payload.dateFrom = dateFrom
-      if (dateTo) payload.dateTo = dateTo
-
       if (onSent) {
         await onSent(payload)
-      } else {
-        // Placeholder until API is wired
-        await new Promise((r) => setTimeout(r, 800))
-        toast({
-          title: 'Success',
-          description: 'Mail sent to subscribers.',
-          variant: 'success',
-        })
       }
       handleClose()
     } catch {
@@ -84,8 +95,6 @@ export function WriteMailModal({
         description: 'Failed to send mail. Please try again.',
         variant: 'destructive',
       })
-    } finally {
-      setIsLoading(false)
     }
   }
 
@@ -120,13 +129,28 @@ export function WriteMailModal({
         </DialogHeader>
 
         <div className="flex flex-col gap-4 py-4 overflow-y-auto">
-          {/* Date (Optional) */}
+          <div className="space-y-2">
+            <Label
+              htmlFor="mail-subject"
+              className="text-sm font-medium text-slate-700"
+            >
+              Subject
+            </Label>
+            <Input
+              id="mail-subject"
+              value={subject}
+              onChange={(e) => setSubject(e.target.value)}
+              placeholder="Welcome to the Coffecito Elite Club!"
+              className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary"
+            />
+          </div>
+
           <div className="space-y-2">
             <Label
               htmlFor="mail-date"
               className="text-sm font-medium text-slate-700"
             >
-              Date (Optional)
+              Start &amp; end date
             </Label>
             <div className="flex items-center gap-2 flex-wrap">
               <Input
@@ -150,7 +174,6 @@ export function WriteMailModal({
             )}
           </div>
 
-          {/* Title */}
           <div className="space-y-2">
             <Label
               htmlFor="mail-title"
@@ -162,12 +185,11 @@ export function WriteMailModal({
               id="mail-title"
               value={title}
               onChange={(e) => setTitle(e.target.value)}
-              placeholder="New Offer"
+              placeholder="You're officially a member of the club!"
               className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary"
             />
           </div>
 
-          {/* Description */}
           <div className="space-y-2">
             <Label
               htmlFor="mail-description"
@@ -179,27 +201,19 @@ export function WriteMailModal({
               id="mail-description"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="New Offer..."
-              rows={4}
-              className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary resize-none"
+              placeholder="HTML body for the email..."
+              rows={6}
+              className="rounded-md border border-primary/40 focus-visible:ring-2 focus-visible:ring-primary resize-none font-mono text-sm"
             />
           </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
-          {/* <Button
-            type="button"
-            variant="outline"
-            onClick={handleClose}
-            className="border-primary text-primary hover:bg-primary/10"
-          >
-            Cancel
-          </Button> */}
           <Button
             type="button"
             onClick={handleSent}
-            disabled={isLoading}
-            isLoading={isLoading}
+            disabled={isSending}
+            isLoading={isSending}
             className="bg-primary text-white hover:bg-primary/90"
           >
             Sent Mail
