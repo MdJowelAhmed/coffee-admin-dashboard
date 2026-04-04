@@ -1,4 +1,4 @@
-import  { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -20,6 +20,9 @@ export function SearchInput({
   className,
 }: SearchInputProps) {
   const [localValue, setLocalValue] = useState(value)
+  /** Parent re-renders (e.g. RTK Query) must not reset the debounce timer */
+  const onChangeRef = useRef(onChange)
+  onChangeRef.current = onChange
 
   useEffect(() => {
     setLocalValue(value)
@@ -28,12 +31,12 @@ export function SearchInput({
   useEffect(() => {
     const timer = setTimeout(() => {
       if (localValue !== value) {
-        onChange(localValue)
+        onChangeRef.current(localValue)
       }
     }, debounceMs)
 
     return () => clearTimeout(timer)
-  }, [localValue, debounceMs, onChange, value])
+  }, [localValue, debounceMs, value])
 
   const handleClear = () => {
     setLocalValue('')

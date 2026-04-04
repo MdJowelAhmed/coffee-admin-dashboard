@@ -9,16 +9,25 @@ import { customerDtoToUser } from '../packageTypes/users'
 const userApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCustomers: builder.query<CustomerListResult, GetCustomersArgs>({
-      query: ({ page, limit, search, status }) => ({
-        url: '/admin/customers',
-        method: 'GET',
-        params: {
+      query: ({ page, limit, search, status }) => {
+        const params: Record<string, string | number> = {
           page,
           limit,
-          ...(search?.trim() ? { search: search.trim() } : {}),
-          ...(status && status !== 'all' ? { status } : {}),
-        },
-      }),
+        }
+        const term = search?.trim()
+        if (term) {
+          params.search = term
+          params.searchTerm = term
+        }
+        if (status && status !== 'all') {
+          params.status = status
+        }
+        return {
+          url: '/admin/customers',
+          method: 'GET',
+          params,
+        }
+      },
       transformResponse: (response: GetCustomersApiResponse): CustomerListResult => ({
         items: (response.data ?? []).map(customerDtoToUser),
         pagination: response.pagination,

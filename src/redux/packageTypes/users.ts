@@ -37,8 +37,9 @@ export type CustomerListResult = {
 export type GetCustomersArgs = {
   page: number
   limit: number
+  /** Sent to the API as the `searchTerm` query parameter */
   search?: string
-  /** When set (not "all"), sent as query param if backend supports it */
+  /** When not `"all"`, sent as the `status` query parameter */
   status?: string
 }
 

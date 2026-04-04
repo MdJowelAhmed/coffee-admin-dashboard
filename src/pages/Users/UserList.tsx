@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -23,15 +23,29 @@ export default function UserList() {
   const [selectedViewUser, setSelectedViewUser] = useState<User | null>(null)
 
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
-  const [statusFilter, setStatusFilter] = useUrlString('status', 'all')
+  const [userStatusUrl, setUserStatusUrl] = useUrlString('userStatus', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
+
+  /** Local search mirrors URL but updates reliably for RTK (not only after debounce→URL lag) */
+  const [searchForApi, setSearchForApi] = useState(searchQuery)
+  useEffect(() => {
+    setSearchForApi(searchQuery)
+  }, [searchQuery])
+
+  /** Same for status filter — keeps Radix Select in sync with URL + API */
+  const [statusForApi, setStatusForApi] = useState<UserStatus | 'all'>(() =>
+    (userStatusUrl || 'all') as UserStatus | 'all'
+  )
+  useEffect(() => {
+    setStatusForApi((userStatusUrl || 'all') as UserStatus | 'all')
+  }, [userStatusUrl])
 
   const { data, isFetching, isError } = useGetCustomersQuery({
     page: currentPage,
     limit: itemsPerPage,
-    search: searchQuery,
-    status: statusFilter,
+    search: searchForApi,
+    status: statusForApi,
   })
 
   const [userStatusChange, { isLoading: isStatusMutating }] =
@@ -52,14 +66,14 @@ export default function UserList() {
   const prevStatusRef = useRef<string | null>(null)
   useEffect(() => {
     if (prevStatusRef.current === null) {
-      prevStatusRef.current = statusFilter
+      prevStatusRef.current = userStatusUrl
       return
     }
-    if (prevStatusRef.current !== statusFilter) {
-      prevStatusRef.current = statusFilter
+    if (prevStatusRef.current !== userStatusUrl) {
+      prevStatusRef.current = userStatusUrl
       setCurrentPage(1)
     }
-  }, [statusFilter, setCurrentPage])
+  }, [userStatusUrl, setCurrentPage])
 
   const items = data?.items ?? []
   const pagination = data?.pagination
@@ -112,6 +126,24 @@ export default function UserList() {
     setCurrentPage(1)
   }
 
+  const handleSearchChange = useCallback(
+    (v: string) => {
+      setSearchForApi(v)
+      setSearchQuery(v)
+      setCurrentPage(1)
+    },
+    [setSearchQuery, setCurrentPage]
+  )
+
+  const handleStatusChange = useCallback(
+    (v: UserStatus | 'all') => {
+      setStatusForApi(v)
+      setUserStatusUrl(v)
+      setCurrentPage(1)
+    },
+    [setUserStatusUrl, setCurrentPage]
+  )
+
   const showInitialLoading = isFetching && items.length === 0
 
   return (
@@ -128,21 +160,15 @@ export default function UserList() {
           </CardTitle>
           <div className="flex items-center gap-3">
             <SearchInput
-              value={searchQuery}
-              onChange={(v) => {
-                setSearchQuery(v)
-                setCurrentPage(1)
-              }}
+              value={searchForApi}
+              onChange={handleSearchChange}
               placeholder="Search name, ID & Status."
               className="w-[300px]"
             />
 
             <UserFilterDropdown
-              value={statusFilter as UserStatus | 'all'}
-              onChange={(v) => {
-                setStatusFilter(v)
-                setCurrentPage(1)
-              }}
+              value={statusForApi}
+              onChange={handleStatusChange}
             />
           </div>
         </CardHeader>

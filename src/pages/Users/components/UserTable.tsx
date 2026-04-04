@@ -29,7 +29,7 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
         <tbody className="divide-y divide-gray-100">
           {users.length === 0 ? (
             <tr>
-              <td colSpan={5} className="px-6 py-8 text-center text-gray-500">
+              <td colSpan={6} className="px-6 py-8 text-center text-gray-500">
                 No users found. Try adjusting your filters.
               </td>
             </tr>
@@ -40,8 +40,7 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.05 * index }}
-                className="hover:bg-gray-50 transition-colors cursor-pointer"
-                onClick={() => onView(user)}
+                className="hover:bg-gray-50 transition-colors"
               >
                 {/* User Name Column */}
                 <td className="px-6 py-4">
@@ -97,8 +96,8 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
                   </span>
                 </td>
 
-                {/* Actions Column */}
-                <td className="px-6 py-4" onClick={(e) => e.stopPropagation()}>
+                {/* Actions Column — details only via Eye button */}
+                <td className="px-6 py-4">
                   <UserActionButtons
                     user={user}
                     onView={onView}

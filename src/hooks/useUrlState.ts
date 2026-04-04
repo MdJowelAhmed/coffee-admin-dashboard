@@ -18,7 +18,7 @@ export function useUrlState<T>({
 
   const value = useMemo(() => {
     const param = searchParams.get(key)
-    if (param === null) return defaultValue
+    if (param === null || param === '') return defaultValue
     try {
       return parse(param)
     } catch {

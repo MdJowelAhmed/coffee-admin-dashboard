@@ -21,7 +21,7 @@ export function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps)
       onClose={onClose}
       title="User Details"
       size="xl"
-      className="bg-white"
+      className="bg-white max-w-4xl"
     >
       <div className="grid gap-6 lg:grid-cols-3">
         {/* Profile Card */}
@@ -66,7 +66,7 @@ export function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps)
               <h3 className="font-medium text-sm text-muted-foreground mb-4">
                 Contact Information
               </h3>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-1">
                 <div className="flex items-center gap-3">
                   <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
                     <Mail className="h-5 w-5 text-primary" />
