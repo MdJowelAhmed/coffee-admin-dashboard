@@ -411,7 +411,7 @@ export function AddEditShopModal({
       onClose={onClose}
       title={isEdit ? 'Edit Shop' : 'New Shop'}
       size="xl"
-      className="bg-white"
+      className="bg-white max-w-4xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -431,17 +431,7 @@ export function AddEditShopModal({
           />
         </div>
 
-        <FormInput
-          label="Address"
-          placeholder="Search address (Google) or type manually"
-          error={errors.location?.message}
-          required
-          ref={(el) => {
-            locationFieldRef(el)
-            addressInputRef.current = el
-          }}
-          {...locationFieldRest}
-        />
+    
 
         <div className="space-y-2">
           <div>
@@ -456,7 +446,17 @@ export function AddEditShopModal({
             aria-label="Pick location on map"
           />
         </div>
-
+        <FormInput
+          label="Address"
+          placeholder="Search address (Google) or type manually"
+          error={errors.location?.message}
+          required
+          ref={(el) => {
+            locationFieldRef(el)
+            addressInputRef.current = el
+          }}
+          {...locationFieldRest}
+        />
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <FormInput
             label="Latitude"

@@ -28,19 +28,19 @@ function ShopCard({
 }) {
   return (
     <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
-      <div className="relative h-40 bg-muted">
+      <div className="relative h-80 bg-gray-100">
         {shop.shopPicture ? (
           <img
             src={shop.shopPicture}
             alt={shop.shopName}
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">
             Shop
           </div>
         )}
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-8">
           <Badge variant={shop.isActive ? 'default' : 'secondary'}>
             {shop.isActive ? 'Active' : 'Inactive'}
           </Badge>
