@@ -1,4 +1,4 @@
-import { Mail, Phone, MapPin, Calendar, Shield } from 'lucide-react'
+import { Mail, Phone, MapPin, Calendar, Shield, Clock } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { Separator } from '@/components/ui/separator'
@@ -132,6 +132,15 @@ export function UserDetailsModal({ user, open, onClose }: UserDetailsModalProps)
                   <div>
                     <p className="text-xs text-muted-foreground">Joined</p>
                     <p className="font-medium">{formatDate(user.createdAt)}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-3">
+                  <div className="h-10 w-10 rounded-lg bg-primary/10 flex items-center justify-center">
+                    <Clock className="h-5 w-5 text-primary" />
+                  </div>
+                  <div>
+                    <p className="text-xs text-muted-foreground">Last updated</p>
+                    <p className="font-medium">{formatDate(user.updatedAt)}</p>
                   </div>
                 </div>
               </div>

@@ -2,100 +2,6 @@ import { createSlice, PayloadAction } from '@reduxjs/toolkit'
 import type { User, UserFilters, PaginationState } from '@/types'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
 
-// Mock data for demonstration
-const mockUsers: User[] = [
-  {
-    id: '1',
-    firstName: 'John',
-    lastName: 'Doe',
-    email: 'john.doe@example.com',
-    phone: '+1 234 567 890',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=John',
-    role: 'admin',
-    status: 'active',
-    createdAt: '2024-01-15T10:30:00Z',
-    updatedAt: '2024-01-20T14:45:00Z',
-    address: '123 Main St',
-    city: 'New York',
-    country: 'USA',
-  },
-  {
-    id: '2',
-    firstName: 'Jane',
-    lastName: 'Smith',
-    email: 'jane.smith@example.com',
-    phone: '+1 234 567 891',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Jane',
-    role: 'user',
-    status: 'active',
-    createdAt: '2024-01-16T11:30:00Z',
-    updatedAt: '2024-01-21T15:45:00Z',
-    address: '456 Oak Ave',
-    city: 'Los Angeles',
-    country: 'USA',
-  },
-  {
-    id: '3',
-    firstName: 'Mike',
-    lastName: 'Johnson',
-    email: 'mike.johnson@example.com',
-    phone: '+1 234 567 892',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Mike',
-    role: 'moderator',
-    status: 'pending',
-    createdAt: '2024-01-17T12:30:00Z',
-    updatedAt: '2024-01-22T16:45:00Z',
-    address: '789 Pine Rd',
-    city: 'Chicago',
-    country: 'USA',
-  },
-  {
-    id: '4',
-    firstName: 'Sarah',
-    lastName: 'Williams',
-    email: 'sarah.williams@example.com',
-    phone: '+1 234 567 893',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Sarah',
-    role: 'editor',
-    status: 'blocked',
-    createdAt: '2024-01-18T13:30:00Z',
-    updatedAt: '2024-01-23T17:45:00Z',
-    address: '321 Elm St',
-    city: 'Houston',
-    country: 'USA',
-  },
-  {
-    id: '5',
-    firstName: 'David',
-    lastName: 'Brown',
-    email: 'david.brown@example.com',
-    phone: '+1 234 567 894',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=David',
-    role: 'user',
-    status: 'active',
-    createdAt: '2024-01-19T14:30:00Z',
-    updatedAt: '2024-01-24T18:45:00Z',
-    address: '654 Maple Dr',
-    city: 'Phoenix',
-    country: 'USA',
-  },
-  {
-    id: '6',
-    firstName: 'Emily',
-    lastName: 'Davis',
-    email: 'emily.davis@example.com',
-    phone: '+1 234 567 895',
-    avatar: 'https://api.dicebear.com/7.x/avataaars/svg?seed=Emily',
-    role: 'user',
-    status: 'inactive',
-    createdAt: '2024-01-20T15:30:00Z',
-    updatedAt: '2024-01-25T19:45:00Z',
-    address: '987 Cedar Ln',
-    city: 'Philadelphia',
-    country: 'USA',
-  },
-]
-
 interface UserState {
   list: User[]
   filteredList: User[]
@@ -107,19 +13,15 @@ interface UserState {
 }
 
 const initialState: UserState = {
-  list: mockUsers,
-  filteredList: mockUsers,
+  list: [],
+  filteredList: [],
   selectedUser: null,
   filters: {
     search: '',
     status: 'all',
     role: 'all',
   },
-  pagination: {
-    ...DEFAULT_PAGINATION,
-    total: mockUsers.length,
-    totalPages: Math.ceil(mockUsers.length / DEFAULT_PAGINATION.limit),
-  },
+  pagination: { ...DEFAULT_PAGINATION },
   isLoading: false,
   error: null,
 }

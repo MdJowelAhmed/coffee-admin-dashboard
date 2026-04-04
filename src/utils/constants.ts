@@ -6,12 +6,12 @@ export const USER_ROLES: SelectOption[] = [
   { value: 'moderator', label: 'Moderator' },
   { value: 'editor', label: 'Editor' },
   { value: 'user', label: 'User' },
+  { value: 'customer', label: 'Customer' },
 ]
 
 export const USER_STATUSES: SelectOption[] = [
   { value: 'all', label: 'All Status' },
   { value: 'active', label: 'Active' },
-  { value: 'blocked', label: 'Blocked' },
   { value: 'pending', label: 'Pending' },
   { value: 'inactive', label: 'Inactive' },
 ]
@@ -57,6 +57,7 @@ export const ROLE_COLORS: Record<string, { bg: string; text: string }> = {
   moderator: { bg: 'bg-warning/10', text: 'text-warning' },
   editor: { bg: 'bg-success/10', text: 'text-success' },
   user: { bg: 'bg-muted', text: 'text-muted-foreground' },
+  customer: { bg: 'bg-blue-100', text: 'text-blue-800' },
 }
 
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']

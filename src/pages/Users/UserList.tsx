@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { SearchInput } from '@/components/common/SearchInput'
@@ -7,18 +7,17 @@ import { ConfirmDialog } from '@/components/common/ConfirmDialog'
 import { UserFilterDropdown } from './components/UserFilterDropdown'
 import { UserTable } from './components/UserTable'
 import { UserDetailsModal } from './components/UserDetailsModal'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { setFilters, setPage, setLimit, updateUserStatus } from '@/redux/slices/userSlice'
+import {
+  useGetCustomersQuery,
+  useUserStatusChangeMutation,
+} from '@/redux/api/userApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
 import { toast } from '@/utils/toast'
 import type { User, UserStatus } from '@/types'
 
 export default function UserList() {
-  const dispatch = useAppDispatch()
-
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
   const [selectedUser, setSelectedUser] = useState<User | null>(null)
-  const [isConfirmLoading, setIsConfirmLoading] = useState(false)
 
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
   const [selectedViewUser, setSelectedViewUser] = useState<User | null>(null)
@@ -28,31 +27,44 @@ export default function UserList() {
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
 
-  const { filteredList, pagination } = useAppSelector((state) => state.users)
+  const { data, isFetching, isError } = useGetCustomersQuery({
+    page: currentPage,
+    limit: itemsPerPage,
+    search: searchQuery,
+    status: statusFilter,
+  })
 
+  const [userStatusChange, { isLoading: isStatusMutating }] =
+    useUserStatusChangeMutation()
+
+  const prevSearchRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(
-      setFilters({
-        search: searchQuery,
-        status: statusFilter as UserStatus | 'all',
-        role: 'all',
-      })
-    )
-  }, [searchQuery, statusFilter, dispatch])
+    if (prevSearchRef.current === null) {
+      prevSearchRef.current = searchQuery
+      return
+    }
+    if (prevSearchRef.current !== searchQuery) {
+      prevSearchRef.current = searchQuery
+      setCurrentPage(1)
+    }
+  }, [searchQuery, setCurrentPage])
 
+  const prevStatusRef = useRef<string | null>(null)
   useEffect(() => {
-    dispatch(setPage(currentPage))
-  }, [currentPage, dispatch])
+    if (prevStatusRef.current === null) {
+      prevStatusRef.current = statusFilter
+      return
+    }
+    if (prevStatusRef.current !== statusFilter) {
+      prevStatusRef.current = statusFilter
+      setCurrentPage(1)
+    }
+  }, [statusFilter, setCurrentPage])
 
-  useEffect(() => {
-    dispatch(setLimit(itemsPerPage))
-  }, [itemsPerPage, dispatch])
-
-  const totalPages = pagination.totalPages
-  const paginatedData = useMemo(() => {
-    const startIndex = (pagination.page - 1) * pagination.limit
-    return filteredList.slice(startIndex, startIndex + pagination.limit)
-  }, [filteredList, pagination.page, pagination.limit])
+  const items = data?.items ?? []
+  const pagination = data?.pagination
+  const totalPages = Math.max(1, pagination?.totalPage ?? 1)
+  const totalItems = pagination?.total ?? 0
 
   const handleView = (user: User) => {
     setSelectedViewUser(user)
@@ -67,11 +79,14 @@ export default function UserList() {
   const handleConfirmLock = async () => {
     if (!selectedUser) return
 
-    setIsConfirmLoading(true)
+    const nextStatus =
+      selectedUser.status === 'inactive' ? 'active' : 'inactive'
+
     try {
-      const nextStatus: UserStatus =
-        selectedUser.status === 'blocked' ? 'active' : 'blocked'
-      dispatch(updateUserStatus({ id: selectedUser.id, status: nextStatus }))
+      await userStatusChange({
+        id: selectedUser.id,
+        status: nextStatus,
+      }).unwrap()
       toast({
         title: 'Success',
         description: `${selectedUser.firstName} ${selectedUser.lastName} is now ${nextStatus}.`,
@@ -85,8 +100,6 @@ export default function UserList() {
         description: 'Failed to update user status. Please try again.',
         variant: 'destructive',
       })
-    } finally {
-      setIsConfirmLoading(false)
     }
   }
 
@@ -96,7 +109,10 @@ export default function UserList() {
 
   const handleItemsPerPageChange = (limit: number) => {
     setItemsPerPage(limit)
+    setCurrentPage(1)
   }
+
+  const showInitialLoading = isFetching && items.length === 0
 
   return (
     <motion.div
@@ -128,30 +144,34 @@ export default function UserList() {
                 setCurrentPage(1)
               }}
             />
-
-            {/* <Button
-              className="bg-primary-foreground hover:bg-blue-700 text-white"
-              onClick={() => toast({ title: 'Add User', description: 'Add user modal coming soon.' })}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Add User
-            </Button> */}
           </div>
         </CardHeader>
 
         <CardContent className="p-0">
-          <UserTable
-            users={paginatedData}
-            onView={handleView}
-            onLock={handleLock}
-          />
+          {showInitialLoading ? (
+            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
+              Loading users...
+            </div>
+          ) : null}
+          {isError && !isFetching ? (
+            <div className="px-6 py-8 text-center text-sm text-red-600">
+              Could not load users. Please try again.
+            </div>
+          ) : null}
+          {!showInitialLoading && !isError ? (
+            <UserTable
+              users={items}
+              onView={handleView}
+              onLock={handleLock}
+            />
+          ) : null}
 
           <div className="px-6 py-4 border-t border-gray-100">
             <Pagination
-              currentPage={pagination.page}
+              currentPage={currentPage}
               totalPages={totalPages}
-              totalItems={filteredList.length}
-              itemsPerPage={pagination.limit}
+              totalItems={totalItems}
+              itemsPerPage={itemsPerPage}
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleItemsPerPageChange}
             />
@@ -168,16 +188,16 @@ export default function UserList() {
           }}
           onConfirm={handleConfirmLock}
           title={
-            selectedUser.status === 'blocked' ? 'Activate User' : 'Block User'
+            selectedUser.status === 'inactive' ? 'Activate User' : 'Inactive User'
           }
           description={`Are you sure you want to ${
-            selectedUser.status === 'blocked' ? 'activate' : 'block'
+            selectedUser.status === 'inactive' ? 'activate' : 'inactive'
           } ${selectedUser.firstName} ${selectedUser.lastName}?`}
-          variant={selectedUser.status === 'blocked' ? 'info' : 'warning'}
+            variant={selectedUser.status === 'inactive' ? 'info' : 'warning'}
           confirmText={
-            selectedUser.status === 'blocked' ? 'Activate' : 'Block User'
+            selectedUser.status === 'inactive' ? 'Activate' : 'Inactive User'
           }
-          isLoading={isConfirmLoading}
+          isLoading={isStatusMutating}
         />
       )}
 

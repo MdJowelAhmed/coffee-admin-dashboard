@@ -18,8 +18,10 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">User Name</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Phone</th>
+            
             <th className="px-6 py-4 text-left text-sm font-bold">Email</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Phone</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Address</th>
             <th className="px-6 py-4 text-left text-sm font-bold">status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
           </tr>
@@ -60,15 +62,18 @@ export function UserTable({ users, onView, onLock }: UserTableProps) {
                     </span>
                   </div>
                 </td>
-
+ {/* Email Column */}
+ <td className="px-6 py-4">
+                  <span className="text-sm text-slate-700">{user.email}</span>
+                </td>
                 {/* Phone Column */}
                 <td className="px-6 py-4">
                   <span className="text-sm text-slate-700">{user.phone}</span>
                 </td>
 
-                {/* Email Column */}
-                <td className="px-6 py-4">
-                  <span className="text-sm text-slate-700">{user.email}</span>
+               {/* Address Column */}
+               <td className="px-6 py-4">
+                  <span className="text-sm text-slate-700">{user.address}</span>
                 </td>
 
                 {/* Status Column */}

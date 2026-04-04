@@ -15,7 +15,7 @@ export interface User {
   country?: string
 }
 
-export type UserRole = 'admin' | 'user' | 'moderator' | 'editor'
+export type UserRole = 'admin' | 'user' | 'moderator' | 'editor' | 'customer'
 export type UserStatus = 'active' | 'blocked' | 'pending' | 'inactive'
 
 export interface UserFilters {
