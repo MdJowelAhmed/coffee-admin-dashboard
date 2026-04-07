@@ -65,8 +65,8 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                                 <thead>
                                     <tr className="bg-success text-slate-800">
                                         <th className="px-6 py-4 text-left text-sm font-bold">SL</th>
-                                        <th className="px-6 py-4 text-left text-sm font-bold">Items</th>
-                                        <th className="px-6 py-4 text-left text-sm font-bold">Title</th>
+                                        <th className="px-6 py-4 text-left text-sm font-bold">Order ID</th>
+                                        <th className="px-6 py-4 text-left text-sm font-bold">Items Names</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Date &amp; Time</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Customer</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Item Number</th>
@@ -97,27 +97,14 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                                             >
                                                 <td className="px-6 py-4 text-sm font-medium text-slate-700">{sl}</td>
                                                 <td className="px-6 py-4">
-                                                    {thumb.src ? (
-                                                        <img
-                                                            src={thumb.src}
-                                                            alt=""
-                                                            className="h-14 w-16 rounded-md object-cover"
-                                                        />
-                                                    ) : (
-                                                        <div className="h-14 w-16 rounded-md bg-slate-200 flex items-center justify-center text-slate-600 font-semibold text-sm">
-                                                            {thumb.label}
-                                                        </div>
-                                                    )}
+                                                    <span className="text-sm text-slate-700">
+                                                        {order.orderId}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
-                                                    <div className="flex flex-col gap-1">
-                                                        <span className="text-sm font-semibold text-slate-800">
-                                                            {firstLineTitle(order)}
-                                                        </span>
-                                                        <span className="text-sm font-medium text-slate-600">
-                                                            {order.orderId}
-                                                        </span>
-                                                    </div>
+                                                    <span className="text-sm text-slate-700">
+                                                        {firstLineTitle(order)}
+                                                    </span>
                                                 </td>
                                                 <td className="px-6 py-4">
                                                     <div className="flex flex-col gap-1">
