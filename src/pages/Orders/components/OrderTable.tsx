@@ -29,6 +29,11 @@ function statusUi(status: string) {
       icon: Check,
       label: 'Processing',
     },
+    ready: {
+      bg: 'bg-teal-500',
+      icon: Coffee,
+      label: 'Ready',
+    },
     pending: {
       bg: 'bg-amber-500',
       icon: Check,

@@ -2,6 +2,7 @@ import { format, parseISO } from 'date-fns'
 import { ModalWrapper } from '@/components/common'
 import { cn } from '@/utils/cn'
 import { formatCurrency } from '@/utils/formatters'
+import { resolveMediaUrl } from '@/utils/mediaUrl'
 import type {
   AdminOrder,
   OrderItemCustomization,
@@ -17,6 +18,7 @@ function statusBadge(status: string) {
   const key = (status || '').toLowerCase()
   const map: Record<string, string> = {
     completed: 'bg-green-500',
+    ready: 'bg-teal-500',
     processing: 'bg-blue-500',
     pending: 'bg-amber-500',
     cancelled: 'bg-red-500',
@@ -91,41 +93,69 @@ export function ViewOrderDetailsModal({
 
         <div>
           <h4 className="text-sm font-semibold text-slate-800 mb-2">Items</h4>
-          <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
-            {order.items.map((line, idx) => (
-              <div key={idx} className="px-4 py-3 space-y-2">
-                <div className="flex justify-between gap-4">
-                  <span className="text-sm font-medium text-slate-800">
-                    {line.productName}{' '}
-                    <span className="text-gray-500 font-normal">
-                      ×{line.quantity}
-                    </span>
-                  </span>
-                  <span className="text-sm font-medium text-slate-800 shrink-0">
-                    {formatCurrency(line.itemTotalPrice)}
-                  </span>
-                </div>
-                <p className="text-xs text-gray-500">
-                  Base {formatCurrency(line.basePrice)} · Unit{' '}
-                  {formatCurrency(line.unitFinalPrice)}
-                </p>
-                {line.selectedCustomizations?.length > 0 && (
-                  <ul className="text-xs text-gray-600 space-y-1 pl-3 list-disc">
-                    {line.selectedCustomizations.map((c, i) => (
-                      <li key={c.customizationId + i}>
-                        {formatCustomization(c)}
-                        {c.totalPrice != null && c.totalPrice > 0 && (
-                          <span className="text-slate-700">
-                            {' '}
-                            (+{formatCurrency(c.totalPrice)})
-                          </span>
+          <div className="w-full overflow-auto border border-gray-200 rounded-lg">
+            <table className="w-full min-w-[900px]">
+              <thead>
+                <tr className="bg-success text-slate-800">
+                  <th className="px-4 py-3 text-left text-sm font-bold">Image</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold">Name</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold"> Customizations</th>
+                  <th className="px-4 py-3 text-left text-sm font-bold">Qty</th>
+                  <th className="px-4 py-3 text-right text-sm font-bold">Price</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {order.items.map((line, idx) => {
+                  const p = line.product
+                  const imgPath =
+                    typeof p === 'object' && p && 'image' in p ? (p.image as string | undefined) : undefined
+                  const imgSrc = resolveMediaUrl(imgPath)
+                  return (
+                    <tr key={idx} className="hover:bg-gray-50 align-top">
+                      <td className="px-4 py-3">
+                        <div className="h-12 w-12 overflow-hidden rounded-md bg-muted">
+                          {imgSrc ? (
+                            <img
+                              src={imgSrc}
+                              alt={line.productName}
+                              className="h-full w-full object-cover"
+                            />
+                          ) : (
+                            <div className="h-full w-full" />
+                          )}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="text-sm font-medium text-slate-800">{line.productName}</div>
+                        <div className="text-xs text-gray-500">
+                          Base {formatCurrency(line.basePrice)} · Unit {formatCurrency(line.unitFinalPrice)}
+                        </div>
+                      </td>
+                      <td className="px-4 py-3 max-w-[200px] overflow-hidden text-ellipsis">
+                        {line.selectedCustomizations?.length > 0 ? (
+                          <ul className="space-y-1 text-xs text-gray-600">
+                            {line.selectedCustomizations.map((c, i) => (
+                              <li key={c.customizationId + i} className="leading-5">
+                                {formatCustomization(c)}
+                                {c.totalPrice != null && c.totalPrice > 0 ? (
+                                  <span className="text-slate-700"> (+{formatCurrency(c.totalPrice)})</span>
+                                ) : null}
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <span className="text-xs text-gray-500">—</span>
                         )}
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            ))}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-slate-800">{line.quantity}</td>
+                      <td className="px-4 py-3 text-right text-sm font-medium text-slate-800">
+                        {formatCurrency(line.itemTotalPrice)}
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
           </div>
         </div>
 
@@ -195,28 +225,7 @@ export function ViewOrderDetailsModal({
           </div>
         </div>
 
-        {order.statusLogs?.length > 0 && (
-          <div>
-            <h4 className="text-sm font-semibold text-slate-800 mb-3">
-              Status history
-            </h4>
-            <div className="border border-gray-200 rounded-lg divide-y divide-gray-100">
-              {order.statusLogs.map((log) => (
-                <div
-                  key={log._id}
-                  className="flex justify-between items-center px-4 py-3 gap-4"
-                >
-                  <span className="text-sm font-medium text-slate-800 capitalize">
-                    {log.status}
-                  </span>
-                  <span className="text-xs text-gray-500 shrink-0">
-                    {format(parseISO(log.timestamp), 'dd MMM yyyy, h:mm a')}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+       
       </div>
     </ModalWrapper>
   )

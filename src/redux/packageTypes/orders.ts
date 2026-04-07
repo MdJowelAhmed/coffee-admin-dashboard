@@ -3,6 +3,7 @@
 export type ApiOrderStatus =
   | 'pending'
   | 'processing'
+  | 'ready'
   | 'completed'
   | 'cancelled'
   | string
@@ -25,7 +26,13 @@ export interface OrderItemCustomization {
 }
 
 export interface AdminOrderItem {
-  product: string
+  product:
+    | string
+    | {
+        _id: string
+        name: string
+        image?: string
+      }
   productName: string
   basePrice: number
   quantity: number
@@ -98,6 +105,6 @@ export const ORDER_STATUS_UPDATE_OPTIONS: {
 }[] = [
   { value: 'pending', label: 'Pending' },
   { value: 'processing', label: 'Processing' },
+  { value: 'ready', label: 'Ready' },
   { value: 'completed', label: 'Completed' },
-  { value: 'cancelled', label: 'Cancelled' },
 ]

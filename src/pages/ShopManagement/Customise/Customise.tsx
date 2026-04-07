@@ -259,7 +259,7 @@ export default function Customise() {
                       variant="ghost"
                       size="sm"
                       disabled={!activeItem}
-                      className="bg-destructive text-white "
+                      className="bg-destructive text-white hover:text-white"
                       onClick={() =>
                         activeItem && setDeleteTarget({ kind: 'category', item: activeItem })
                       }
