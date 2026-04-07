@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Phone, Clock, Plus, CalendarOff, CloudCog } from 'lucide-react'
+import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
@@ -17,8 +17,21 @@ import {
 } from '@/redux/api/shopManagementApi'
 import { apiStoreToShop, shopToStoreDataPayload } from '@/redux/packageTypes/shop'
 import Loading from '@/components/common/Loading'
+import type { FetchBaseQueryError } from '@reduxjs/toolkit/query'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
+
+function mutationErrorMessage(err: unknown, fallback: string): string {
+  if (typeof err === 'object' && err !== null && 'data' in err) {
+    const data = (err as FetchBaseQueryError).data
+    if (data && typeof data === 'object' && 'message' in data) {
+      const msg = (data as { message?: unknown }).message
+      if (typeof msg === 'string') return msg
+    }
+  }
+  if (err instanceof Error) return err.message
+  return fallback
+}
 
 function ShopCard({
   shop,
@@ -198,14 +211,13 @@ export default function ShopList() {
         title: 'Updated',
         description: isActive ? 'Shop is now active.' : 'Shop is now inactive.',
       })
-    } catch(err) {
-      console.log(err)
-      // toast({title: 'Update failed', description: err.message, variant: 'destructive'})
-      console.log(err.data.message)
-      const errorMessage = err.data.message
+    } catch (err) {
       toast({
-        title: "Status Update Failed",
-        description: errorMessage,
+        title: 'Status update failed',
+        description: mutationErrorMessage(
+          err,
+          'Could not change shop status. Try again.',
+        ),
         variant: 'destructive',
       })
     } finally {
