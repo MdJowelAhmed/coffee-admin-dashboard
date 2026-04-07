@@ -241,21 +241,14 @@ export function AddEditShopProductModal({
         </div>
 
         <FormInput
-          label="Product name"
+          label="Product Name"
           placeholder="e.g. Double Espresso"
           error={errors.name?.message}
           required
           {...register('name')}
         />
 
-        <FormTextarea
-          label="Description"
-          placeholder="Short description for customers"
-          error={errors.description?.message}
-          required
-          rows={4}
-          {...register('description')}
-        />
+
 
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
           <FormInput
@@ -296,7 +289,7 @@ export function AddEditShopProductModal({
               customizeLoading ? 'Loading…' : 'Select customization types (e.g. Flavour, Milk)'
             }
             disabled={listsLoading || customizeLoading}
-            helperText="Selected IDs are sent as customizationIds."
+            // helperText="Selected IDs are sent as customizationIds."
             emptyMessage="No customization types found. Add them under Shop → Customise."
           />
         </div>
@@ -314,16 +307,27 @@ export function AddEditShopProductModal({
           </label>
         </div> */}
 
-        <div>
-          <label className="mb-2 block text-sm font-medium">
-            Image {!isEdit ? <span className="text-destructive">*</span> : null}
-          </label>
-      
-          <ImageUploader
-            value={image}
-            onChange={(f) => setImage(f)}
-            maxSize={MAX_IMAGE_SIZE}
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormTextarea
+            label="Description"
+            placeholder="Short description for customers"
+            error={errors.description?.message}
+            required
+            rows={8}
+            {...register('description')}
           />
+          <div>
+            <label className="mb-2 block text-sm font-medium">
+              Image {!isEdit ? <span className="text-destructive">*</span> : null}
+            </label>
+
+            <ImageUploader
+              value={image}
+              onChange={(f) => setImage(f)}
+              maxSize={MAX_IMAGE_SIZE}
+            />
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
