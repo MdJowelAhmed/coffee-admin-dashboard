@@ -65,6 +65,27 @@ export interface StoreDataPayload {
   openTime: string
   closeTime: string
   offDay: string
+  isActive?: boolean
+}
+
+/** Build PATCH/POST `data` from a `Shop` row (e.g. list toggle). */
+export function shopToStoreDataPayload(
+  shop: Shop,
+  overrides?: Partial<Pick<StoreDataPayload, 'isActive'>>,
+): StoreDataPayload {
+  return {
+    name: shop.shopName,
+    address: shop.location,
+    latitude: shop.latitude ?? '',
+    longitude: shop.longitude ?? '',
+    phone: shop.contact,
+    about: shop.aboutShop,
+    openTime: shop.openTime,
+    closeTime: shop.closeTime,
+    offDay: shop.offDay ?? '',
+    isActive:
+      overrides?.isActive !== undefined ? overrides.isActive : shop.isActive,
+  }
 }
 
 const WEEKDAYS = [

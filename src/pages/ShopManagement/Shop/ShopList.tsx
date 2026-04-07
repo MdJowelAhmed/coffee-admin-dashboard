@@ -1,9 +1,9 @@
 import { useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
-import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
+import { MapPin, Phone, Clock, Plus, CalendarOff, CloudCog } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
-import { Badge } from '@/components/ui/badge'
+import { Switch } from '@/components/ui/switch'
 import { Pagination, ConfirmDialog, SearchInput } from '@/components/common'
 import type { Shop } from '@/types'
 import { toast } from '@/utils/toast'
@@ -13,8 +13,9 @@ import {
   useGetShopsQuery,
   useDeleteShopMutation,
   useConnectStripeAccountMutation,
+  useUpdateShopMutation,
 } from '@/redux/api/shopManagementApi'
-import { apiStoreToShop } from '@/redux/packageTypes/shop'
+import { apiStoreToShop, shopToStoreDataPayload } from '@/redux/packageTypes/shop'
 import Loading from '@/components/common/Loading'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
@@ -24,11 +25,15 @@ function ShopCard({
   onEdit,
   onDelete,
   onConnectStripe,
+  onToggleActive,
+  isTogglingActive,
 }: {
   shop: Shop
   onEdit: (s: Shop) => void
   onDelete: (s: Shop) => void
   onConnectStripe: (s: Shop) => void
+  onToggleActive: (s: Shop, isActive: boolean) => void
+  isTogglingActive: boolean
 }) {
   return (
     <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -44,10 +49,15 @@ function ShopCard({
             Shop
           </div>
         )}
-        <div className="absolute top-3 right-8">
-          <Badge variant={shop.isActive ? 'default' : 'secondary'}>
-            {shop.isActive ? 'Active' : 'Inactive'}
-          </Badge>
+        <div className="absolute top-3 right-3 flex items-center gap-2 rounded-md  px-2.5 py-1.5 backdrop-blur-sm">
+          
+          <Switch
+            checked={shop.isActive}
+            disabled={isTogglingActive}
+            onCheckedChange={(checked) => onToggleActive(shop, checked)}
+            aria-label={shop.isActive ? 'Set shop inactive' : 'Set shop active'}
+            className="data-[state=checked]:bg-primary"
+          />
         </div>
       </div>
       <CardHeader className="pb-2 pt-4">
@@ -124,6 +134,8 @@ export default function ShopList() {
 
   const [deleteShop, { isLoading: isDeleteLoading }] = useDeleteShopMutation()
   const [connectStripeAccount] = useConnectStripeAccountMutation()
+  const [updateShop] = useUpdateShopMutation()
+  const [togglingActiveId, setTogglingActiveId] = useState<string | null>(null)
 
   const { data, isLoading, isFetching, error } = useGetShopsQuery({
     page,
@@ -172,6 +184,32 @@ export default function ShopList() {
       })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleToggleActive = async (shop: Shop, isActive: boolean) => {
+    setTogglingActiveId(shop.id)
+    try {
+      await updateShop({
+        id: shop.id,
+        data: shopToStoreDataPayload(shop, { isActive }),
+      }).unwrap()
+      toast({
+        title: 'Updated',
+        description: isActive ? 'Shop is now active.' : 'Shop is now inactive.',
+      })
+    } catch(err) {
+      console.log(err)
+      // toast({title: 'Update failed', description: err.message, variant: 'destructive'})
+      console.log(err.data.message)
+      const errorMessage = err.data.message
+      toast({
+        title: "Status Update Failed",
+        description: errorMessage,
+        variant: 'destructive',
+      })
+    } finally {
+      setTogglingActiveId(null)
     }
   }
 
@@ -259,6 +297,8 @@ export default function ShopList() {
                   onEdit={handleEdit}
                   onDelete={setDeleteTarget}
                   onConnectStripe={handleConnectStripe}
+                  onToggleActive={handleToggleActive}
+                  isTogglingActive={togglingActiveId === shop.id}
                 />
               ))}
             </div>

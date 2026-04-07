@@ -371,6 +371,10 @@ export function AddEditShopModal({
           ? ''
           : data.offDay.trim(),
     }
+    // POST /admin/stores rejects `isActive`; only send on PATCH (update).
+    if (isEdit && shop) {
+      payload.isActive = shop.isActive
+    }
 
     try {
       if (isEdit && editingId) {
