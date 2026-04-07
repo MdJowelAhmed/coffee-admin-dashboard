@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Plus } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
@@ -8,111 +8,64 @@ import { Switch } from '@/components/ui/switch'
 import { Pagination } from '@/components/common'
 import {
   useDeleteCustomizeMutation,
+  useDeleteCustomizeOptionMutation,
   useGetCustomizeQuery,
   useUpdateCustomizeMutation,
 } from '@/redux/api/customizeApi'
-import type { MilkType, SyrupType } from '@/types'
+import type {
+  ApiCustomizeItem,
+  ApiCustomizeOption,
+} from '@/redux/packageTypes/customize'
 import { toast } from '@/utils/toast'
-import { formatCurrency, formatDateTime } from '@/utils/formatters'
+import { formatCurrency } from '@/utils/formatters'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
-import { AddEditMilkTypeModal } from './AddEditMilkTypeModal'
-import { AddEditSyrupTypeModal } from './AddEditSyrupTypeModal'
+import { AddEditCustomizationTypeModal } from './AddEditCustomizationTypeModal'
+import { AddEditCustomizationOptionModal } from './AddEditCustomizationOptionModal'
 import { ConfirmDialog } from '@/components/common'
 
-function toMilkType(item: {
-  _id: string
-  name: string
-  price: number
-  status: boolean
-  createdAt: string
-  updatedAt: string
-}): MilkType {
-  return {
-    id: item._id,
-    name: item.name,
-    price: item.price,
-    type: 'milk',
-    isActive: item.status,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-  }
-}
+type DeleteTarget =
+  | { kind: 'category'; item: ApiCustomizeItem }
+  | { kind: 'option'; categoryId: string; categoryName: string; option: ApiCustomizeOption }
 
-function toSyrupType(item: {
-  _id: string
-  name: string
-  price: number
-  status: boolean
-  createdAt: string
-  updatedAt: string
-}): SyrupType {
-  return {
-    id: item._id,
-    name: item.name,
-    price: item.price,
-    type: 'syrup',
-    isActive: item.status,
-    createdAt: item.createdAt,
-    updatedAt: item.updatedAt,
-  }
-}
-
-function MilkTypeTable({
-  items,
+function OptionsTable({
+  options,
+  categoryName,
   onEdit,
   onDelete,
-  onToggle,
 }: {
-  items: MilkType[]
-  onEdit: (m: MilkType) => void
-  onDelete: (m: MilkType) => void
-  onToggle: (m: MilkType) => void
+  options: ApiCustomizeOption[]
+  categoryName: string
+  onEdit: (opt: ApiCustomizeOption) => void
+  onDelete: (opt: ApiCustomizeOption) => void
 }) {
   return (
     <div className="w-full overflow-auto">
-      <table className="w-full min-w-[900px]">
+      <table className="w-full min-w-[700px]">
         <thead>
           <tr className="bg-success text-slate-800">
-            <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Label</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Price</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Created</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Updated</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
             <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-gray-100">
-          {items.length === 0 ? (
+          {options.length === 0 ? (
             <tr>
-              <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                No milk types yet. Add one to get started.
+              <td colSpan={3} className="px-6 py-8 text-center text-gray-500">
+                No options yet for “{categoryName}”. Add one below.
               </td>
             </tr>
           ) : (
-            items.map((m) => (
-              <tr key={m.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{m.name}</td>
-                <td className="px-6 py-4">{formatCurrency(m.price)}</td>
-                <td className="px-6 py-4">
-                  <span className="rounded-sm bg-secondary-foreground px-3 py-2 text-xs font-medium text-accent">
-                    milk
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(m.createdAt)}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(m.updatedAt)}</td>
-                <td className="px-6 py-4">
-                  <Switch
-                    checked={m.isActive}
-                    onCheckedChange={() => onToggle(m)}
-                  />
-                </td>
+            options.map((opt) => (
+              <tr key={opt._id} className="hover:bg-gray-50">
+                <td className="px-6 py-4 font-medium">{opt.label}</td>
+                <td className="px-6 py-4">{formatCurrency(opt.price)}</td>
                 <td className="px-6 py-4">
                   <div className="flex justify-end gap-2">
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onEdit(m)}
+                      onClick={() => onEdit(opt)}
                       className="text-blue-600 hover:text-blue-700"
                     >
                       Edit
@@ -120,86 +73,7 @@ function MilkTypeTable({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onDelete(m)}
-                      className="text-red-600 hover:text-red-700"
-                    >
-                      Delete
-                    </Button>
-                  </div>
-                </td>
-              </tr>
-            ))
-          )}
-        </tbody>
-      </table>
-    </div>
-  )
-}
-
-function SyrupTypeTable({
-  items,
-  onEdit,
-  onDelete,
-  onToggle,
-}: {
-  items: SyrupType[]
-  onEdit: (s: SyrupType) => void
-  onDelete: (s: SyrupType) => void
-  onToggle: (s: SyrupType) => void
-}) {
-  return (
-    <div className="w-full overflow-auto">
-      <table className="w-full min-w-[900px]">
-        <thead>
-          <tr className="bg-success text-slate-800">
-            <th className="px-6 py-4 text-left text-sm font-bold">Name</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Price</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Type</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Created</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Updated</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Status</th>
-            <th className="px-6 py-4 text-right text-sm font-bold">Action</th>
-          </tr>
-        </thead>
-        <tbody className="divide-y divide-gray-100">
-          {items.length === 0 ? (
-            <tr>
-              <td colSpan={7} className="px-6 py-8 text-center text-gray-500">
-                No syrup types yet. Add one to get started.
-              </td>
-            </tr>
-          ) : (
-            items.map((s) => (
-              <tr key={s.id} className="hover:bg-gray-50">
-                <td className="px-6 py-4 font-medium">{s.name}</td>
-                <td className="px-6 py-4">{formatCurrency(s.price)}</td>
-                <td className="px-6 py-4">
-                  <span className="rounded-sm bg-secondary-foreground px-3 py-2 text-xs font-medium text-accent">
-                    syrup
-                  </span>
-                </td>
-                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(s.createdAt)}</td>
-                <td className="px-6 py-4 whitespace-nowrap">{formatDateTime(s.updatedAt)}</td>
-                <td className="px-6 py-4">
-                  <Switch
-                    checked={s.isActive}
-                    onCheckedChange={() => onToggle(s)}
-                  />
-                </td>
-                <td className="px-6 py-4">
-                  <div className="flex justify-end gap-2">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onEdit(s)}
-                      className="text-blue-600 hover:text-blue-700"
-                    >
-                      Edit
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => onDelete(s)}
+                      onClick={() => onDelete(opt)}
                       className="text-red-600 hover:text-red-700"
                     >
                       Delete
@@ -216,99 +90,90 @@ function SyrupTypeTable({
 }
 
 export default function Customise() {
-  const [milkPage, setMilkPage] = useState(1)
-  const [milkLimit, setMilkLimit] = useState(DEFAULT_PAGINATION.limit)
-  const [syrupPage, setSyrupPage] = useState(1)
-  const [syrupLimit, setSyrupLimit] = useState(DEFAULT_PAGINATION.limit)
+  const [page, setPage] = useState(1)
+  const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
+  const [activeTab, setActiveTab] = useState<string>('')
 
   const [updateCustomize] = useUpdateCustomizeMutation()
   const [deleteCustomize] = useDeleteCustomizeMutation()
+  const [deleteOption] = useDeleteCustomizeOptionMutation()
 
-  const {
-    data: milkData,
-    isLoading: isMilkLoading,
-    isFetching: isMilkFetching,
-  } = useGetCustomizeQuery({ page: milkPage, limit: milkLimit, type: 'milk' })
-  console.log(milkData)
+  const { data, isLoading, isFetching } = useGetCustomizeQuery({ page, limit })
 
-  const {
-    data: syrupData,
-    isLoading: isSyrupLoading,
-    isFetching: isSyrupFetching,
-  } = useGetCustomizeQuery({ page: syrupPage, limit: syrupLimit, type: 'syrup' })
+  const items = useMemo(() => data?.items ?? [], [data?.items])
+  const totalPages = data?.pagination?.totalPage ?? 1
 
-  const milkTypes = useMemo(
-    () => (milkData?.items ?? []).map(toMilkType),
-    [milkData?.items],
-  )
-  const syrupTypes = useMemo(
-    () => (syrupData?.items ?? []).map(toSyrupType),
-    [syrupData?.items],
-  )
+  useEffect(() => {
+    if (items.length === 0) {
+      setActiveTab('')
+      return
+    }
+    const exists = items.some((i) => i._id === activeTab)
+    if (!activeTab || !exists) {
+      setActiveTab(items[0]._id)
+    }
+  }, [items, activeTab])
 
-  const [milkModalOpen, setMilkModalOpen] = useState(false)
-  const [syrupModalOpen, setSyrupModalOpen] = useState(false)
-  const [editingMilkId, setEditingMilkId] = useState<string | null>(null)
-  const [editingSyrupId, setEditingSyrupId] = useState<string | null>(null)
-  const [deleteTarget, setDeleteTarget] = useState<
-    { type: 'milk'; item: MilkType } | { type: 'syrup'; item: SyrupType } | null
-  >(null)
+  const [typeModalOpen, setTypeModalOpen] = useState(false)
+  const [editingTypeId, setEditingTypeId] = useState<string | null>(null)
+
+  const [optionModalOpen, setOptionModalOpen] = useState(false)
+  const [optionContextId, setOptionContextId] = useState<string | null>(null)
+  const [optionCategoryName, setOptionCategoryName] = useState('')
+  const [editingOption, setEditingOption] = useState<ApiCustomizeOption | null>(null)
+
+  const [deleteTarget, setDeleteTarget] = useState<DeleteTarget | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const selectedMilk = milkTypes.find((m) => m.id === editingMilkId) ?? null
-  const selectedSyrup = syrupTypes.find((s) => s.id === editingSyrupId) ?? null
+  const selectedCategoryForTypeModal =
+    items.find((i) => i._id === editingTypeId) ?? null
 
-  const paginatedMilkTypes = milkTypes
-  const paginatedSyrupTypes = syrupTypes
-
-  const milkTotalPages = milkData?.pagination?.totalPage ?? 1
-  const syrupTotalPages = syrupData?.pagination?.totalPage ?? 1
-
-  const handleMilkPageChange = (page: number) => setMilkPage(page)
-  const handleMilkLimitChange = (limit: number) => {
-    setMilkLimit(limit)
-    setMilkPage(1)
-  }
-  const handleSyrupPageChange = (page: number) => setSyrupPage(page)
-  const handleSyrupLimitChange = (limit: number) => {
-    setSyrupLimit(limit)
-    setSyrupPage(1)
+  const handlePageChange = (p: number) => setPage(p)
+  const handleLimitChange = (l: number) => {
+    setLimit(l)
+    setPage(1)
   }
 
-  const handleAddMilk = () => {
-    setEditingMilkId(null)
-    setMilkModalOpen(true)
-  }
-  const handleEditMilk = (m: MilkType) => {
-    setEditingMilkId(m.id)
-    setMilkModalOpen(true)
-  }
-  const handleAddSyrup = () => {
-    setEditingSyrupId(null)
-    setSyrupModalOpen(true)
-  }
-  const handleEditSyrup = (s: SyrupType) => {
-    setEditingSyrupId(s.id)
-    setSyrupModalOpen(true)
+  const handleAddType = () => {
+    setEditingTypeId(null)
+    setTypeModalOpen(true)
   }
 
-  const handleDelete = (type: 'milk' | 'syrup', item: MilkType | SyrupType) => {
-    setDeleteTarget({ type, item } as typeof deleteTarget)
+  const handleEditType = (item: ApiCustomizeItem) => {
+    setEditingTypeId(item._id)
+    setTypeModalOpen(true)
   }
+
+  const handleAddOption = (item: ApiCustomizeItem) => {
+    setEditingOption(null)
+    setOptionContextId(item._id)
+    setOptionCategoryName(item.name)
+    setOptionModalOpen(true)
+  }
+
+  const handleEditOption = (category: ApiCustomizeItem, opt: ApiCustomizeOption) => {
+    setEditingOption(opt)
+    setOptionContextId(category._id)
+    setOptionCategoryName(category.name)
+    setOptionModalOpen(true)
+  }
+
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return
     setIsDeleting(true)
     try {
-      await deleteCustomize({ id: deleteTarget.item.id }).unwrap()
-      toast({
-        title: 'Deleted',
-        description:
-          deleteTarget.type === 'milk'
-            ? 'Milk type removed.'
-            : 'Syrup type removed.',
-      })
+      if (deleteTarget.kind === 'category') {
+        await deleteCustomize({ id: deleteTarget.item._id }).unwrap()
+        toast({ title: 'Deleted', description: 'Customization type removed.' })
+      } else {
+        await deleteOption({
+          id: deleteTarget.categoryId,
+          optionId: deleteTarget.option._id,
+        }).unwrap()
+        toast({ title: 'Deleted', description: 'Option removed.' })
+      }
       setDeleteTarget(null)
-    } catch (e) {
+    } catch {
       toast({
         title: 'Error',
         description: 'Failed to delete. Please try again.',
@@ -319,6 +184,13 @@ export default function Customise() {
     }
   }
 
+  const deleteDescription =
+    deleteTarget?.kind === 'category'
+      ? `Are you sure you want to delete the type "${deleteTarget.item.name}" and all of its options?`
+      : `Are you sure you want to delete the option "${deleteTarget?.kind === 'option' ? deleteTarget.option.label : ''}"?`
+
+  const showEmpty = !isLoading && items.length === 0
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -326,112 +198,162 @@ export default function Customise() {
       transition={{ duration: 0.3 }}
       className="space-y-6"
     >
-      <Card className="bg-white border-0 shadow-sm">
-    
+      <Card className="border-0 bg-white shadow-sm">
         <CardContent className="pt-6">
-          <Tabs defaultValue="milk" className="w-full">
-            <TabsList className="mb-4">
-              <TabsTrigger value="milk">Milk Type</TabsTrigger>
-              <TabsTrigger value="syrup">Syrup Type</TabsTrigger>
-            </TabsList>
-            <TabsContent value="milk" className=" space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={handleAddMilk} className="bg-secondary text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Milk Type
-                </Button>
-              </div>
-              <MilkTypeTable
-                items={paginatedMilkTypes}
-                onEdit={handleEditMilk}
-                onDelete={(m) => handleDelete('milk', m)}
-                onToggle={async (m) => {
-                  try {
-                    await updateCustomize({ id: m.id, status: !m.isActive }).unwrap()
-                  } catch (e) {
-                    toast({
-                      title: 'Error',
-                      description: 'Failed to update status. Please try again.',
-                      variant: 'destructive',
-                    })
-                  }
-                }}
-              />
-              <Pagination
-                currentPage={milkPage}
-                totalPages={milkTotalPages}
-                totalItems={milkData?.pagination?.total ?? milkTypes.length}
-                itemsPerPage={milkLimit}
-                onPageChange={handleMilkPageChange}
-                onItemsPerPageChange={handleMilkLimitChange}
-              />
-              {(isMilkLoading || isMilkFetching) && (
-                <div className="text-sm text-gray-500">Loading milk types…</div>
-              )}
-            </TabsContent>
-            <TabsContent value="syrup" className=" space-y-4">
-              <div className="flex justify-end">
-                <Button onClick={handleAddSyrup} className="bg-secondary text-white">
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Syrup Type
-                </Button>
-              </div>
-              <SyrupTypeTable
-                items={paginatedSyrupTypes}
-                onEdit={handleEditSyrup}
-                onDelete={(s) => handleDelete('syrup', s)}
-                onToggle={async (s) => {
-                  try {
-                    await updateCustomize({ id: s.id, status: !s.isActive }).unwrap()
-                  } catch (e) {
-                    toast({
-                      title: 'Error',
-                      description: 'Failed to update status. Please try again.',
-                      variant: 'destructive',
-                    })
-                  }
-                }}
-              />
-              <Pagination
-                currentPage={syrupPage}
-                totalPages={syrupTotalPages}
-                totalItems={syrupData?.pagination?.total ?? syrupTypes.length}
-                itemsPerPage={syrupLimit}
-                onPageChange={handleSyrupPageChange}
-                onItemsPerPageChange={handleSyrupLimitChange}
-              />
-              {(isSyrupLoading || isSyrupFetching) && (
-                <div className="text-sm text-gray-500">Loading syrup types…</div>
-              )}
-            </TabsContent>
-          </Tabs>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+            <p className="text-sm text-gray-600">
+              Tabs match customization types from your API. Add types, then add options under each type.
+            </p>
+            <Button onClick={handleAddType} className="bg-secondary text-white">
+              <Plus className="mr-2 h-4 w-4" />
+              Add customization type
+            </Button>
+          </div>
+
+          {showEmpty ? (
+            <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center text-gray-500">
+              No customization types yet. Click “Add customization type” to create one.
+            </div>
+          ) : (
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+              <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap justify-start gap-1 overflow-x-auto bg-muted/50 p-1">
+                {items.map((item) => (
+                  <TabsTrigger
+                    key={item._id}
+                    value={item._id}
+                    className="max-w-[200px] truncate px-3 py-2 text-sm"
+                  >
+                    {item.name}
+                  </TabsTrigger>
+                ))}
+              </TabsList>
+
+              {items.map((item) => (
+                <TabsContent key={item._id} value={item._id} className="space-y-4">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="rounded-sm bg-secondary-foreground px-3 py-1 text-xs font-medium text-accent">
+                        {item.type}
+                      </span>
+                      {item.isRequired ? (
+                        <span className="rounded-sm bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
+                          Required
+                        </span>
+                      ) : (
+                        <span className="rounded-sm bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                          Optional
+                        </span>
+                      )}
+                      <div className="flex items-center gap-2 pl-2">
+                        <span className="text-sm text-gray-600">Active</span>
+                        <Switch
+                          checked={item.status}
+                          onCheckedChange={async () => {
+                            try {
+                              await updateCustomize({
+                                id: item._id,
+                                status: !item.status,
+                              }).unwrap()
+                            } catch {
+                              toast({
+                                title: 'Error',
+                                description: 'Failed to update status. Please try again.',
+                                variant: 'destructive',
+                              })
+                            }
+                          }}
+                        />
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap justify-end gap-2">
+                      <Button variant="outline" size="sm" onClick={() => handleEditType(item)}>
+                        Edit type
+                      </Button>
+                      <Button
+                        size="sm"
+                        onClick={() => handleAddOption(item)}
+                        className="bg-secondary text-white"
+                      >
+                        <Plus className="mr-1 h-4 w-4" />
+                        Add option
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        className="text-red-600 hover:text-red-700"
+                        onClick={() =>
+                          setDeleteTarget({ kind: 'category', item })
+                        }
+                      >
+                        Delete type
+                      </Button>
+                    </div>
+                  </div>
+
+                  <OptionsTable
+                    options={item.options ?? []}
+                    categoryName={item.name}
+                    onEdit={(opt) => handleEditOption(item, opt)}
+                    onDelete={(opt) =>
+                      setDeleteTarget({
+                        kind: 'option',
+                        categoryId: item._id,
+                        categoryName: item.name,
+                        option: opt,
+                      })
+                    }
+                  />
+                </TabsContent>
+              ))}
+            </Tabs>
+          )}
+
+          {!showEmpty && (
+            <Pagination
+              currentPage={page}
+              totalPages={totalPages}
+              totalItems={data?.pagination?.total ?? items.length}
+              itemsPerPage={limit}
+              onPageChange={handlePageChange}
+              onItemsPerPageChange={handleLimitChange}
+            />
+          )}
+
+          {(isLoading || isFetching) && (
+            <div className="pt-4 text-sm text-gray-500">Loading customization types…</div>
+          )}
         </CardContent>
       </Card>
 
-      <AddEditMilkTypeModal
-        open={milkModalOpen}
+      <AddEditCustomizationTypeModal
+        open={typeModalOpen}
         onClose={() => {
-          setMilkModalOpen(false)
-          setEditingMilkId(null)
+          setTypeModalOpen(false)
+          setEditingTypeId(null)
         }}
-        editingId={editingMilkId}
-        milkType={selectedMilk}
+        editingId={editingTypeId}
+        customization={selectedCategoryForTypeModal}
       />
-      <AddEditSyrupTypeModal
-        open={syrupModalOpen}
+
+      <AddEditCustomizationOptionModal
+        open={optionModalOpen}
         onClose={() => {
-          setSyrupModalOpen(false)
-          setEditingSyrupId(null)
+          setOptionModalOpen(false)
+          setOptionContextId(null)
+          setEditingOption(null)
+          setOptionCategoryName('')
         }}
-        editingId={editingSyrupId}
-        syrupType={selectedSyrup}
+        customizationId={optionContextId}
+        categoryName={optionCategoryName}
+        editingOption={editingOption}
       />
+
       <ConfirmDialog
         open={!!deleteTarget}
         onClose={() => !isDeleting && setDeleteTarget(null)}
         onConfirm={handleConfirmDelete}
         title="Delete"
-        description={`Are you sure you want to delete "${deleteTarget?.item.name}"?`}
+        description={deleteDescription}
         confirmText="Delete"
         variant="danger"
         isLoading={isDeleting}

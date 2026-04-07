@@ -149,7 +149,7 @@ export function EarningsSummaryChart({
                                     />
                                     <Tooltip content={<CustomTooltip />} />
                                     <Area
-                                        type="natural"
+                                        type="monotone"
                                         dataKey="revenue"
                                         stroke="#F76212"
                                         strokeWidth={3}

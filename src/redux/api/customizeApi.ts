@@ -1,29 +1,29 @@
 import { baseApi } from '../baseApi'
 import type {
   CreateCustomizeBody,
+  CreateCustomizeOptionBody,
   CustomizeListResult,
   GetCustomizeApiResponse,
   UpdateCustomizeBody,
+  UpdateCustomizeOptionBody,
 } from '../packageTypes/customize'
 
 export type GetCustomizeArgs = {
   page: number
   limit: number
   search?: string
-  type?: 'milk' | 'syrup'
 }
 
 const customizeApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getCustomize: builder.query<CustomizeListResult, GetCustomizeArgs>({
-      query: ({ page, limit, search, type }) => ({
+      query: ({ page, limit, search }) => ({
         url: '/customizationOptions',
         method: 'GET',
         params: {
           page,
           limit,
           ...(search?.trim() ? { search: search.trim() } : {}),
-          ...(type ? { type } : {}),
         },
       }),
       transformResponse: (response: GetCustomizeApiResponse): CustomizeListResult => ({
@@ -50,7 +50,30 @@ const customizeApi = baseApi.injectEndpoints({
     }),
     deleteCustomize: builder.mutation<unknown, { id: string }>({
       query: ({ id }) => ({
-        url: `/customize/${id}`,
+        url: `/customizationOptions/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Customize'],
+    }),
+    createCustomizeOption: builder.mutation<unknown, CreateCustomizeOptionBody>({
+      query: ({ id, label, price }) => ({
+        url: `/customizationOptions/${id}/options`,
+        method: 'POST',
+        body: { label, price },
+      }),
+      invalidatesTags: ['Customize'],
+    }),
+    updateCustomizeOption: builder.mutation<unknown, UpdateCustomizeOptionBody>({
+      query: ({ id, optionId, label, price }) => ({
+        url: `/customizationOptions/${id}/options/${optionId}`,
+        method: 'PATCH',
+        body: { label, price },
+      }),
+      invalidatesTags: ['Customize'],
+    }),
+    deleteCustomizeOption: builder.mutation<unknown, { id: string; optionId: string }>({
+      query: ({ id, optionId }) => ({
+        url: `/customizationOptions/${id}/options/${optionId}`,
         method: 'DELETE',
       }),
       invalidatesTags: ['Customize'],
@@ -63,4 +86,7 @@ export const {
   useCreateCustomizeMutation,
   useUpdateCustomizeMutation,
   useDeleteCustomizeMutation,
+  useCreateCustomizeOptionMutation,
+  useUpdateCustomizeOptionMutation,
+  useDeleteCustomizeOptionMutation,
 } = customizeApi

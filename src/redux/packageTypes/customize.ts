@@ -1,4 +1,4 @@
-export type CustomizeType = 'milk' | 'syrup'
+export type CustomizationSelectionMode = 'single' | 'multi' | 'quantity'
 
 export interface CustomizePagination {
   total: number
@@ -7,14 +7,21 @@ export interface CustomizePagination {
   totalPage: number
 }
 
-/** API shape for `/customize` items */
+export interface ApiCustomizeOption {
+  _id: string
+  label: string
+  price: number
+}
+
+/** One customization group from `/customizationOptions` (tab = one item) */
 export interface ApiCustomizeItem {
   _id: string
   name: string
-  price: number
-  type: CustomizeType | string
+  type: CustomizationSelectionMode | string
+  isRequired: boolean
   status: boolean
   isDeleted?: boolean
+  options: ApiCustomizeOption[]
   createdAt: string
   updatedAt: string
   __v?: number
@@ -34,16 +41,29 @@ export interface CustomizeListResult {
 
 export interface CreateCustomizeBody {
   name: string
-  price: number
-  type: CustomizeType
+  type: CustomizationSelectionMode
+  isRequired: boolean
 }
 
 export interface UpdateCustomizeBody {
   id: string
   name?: string
-  price?: number
-  type?: CustomizeType
+  type?: CustomizationSelectionMode
+  isRequired?: boolean
   status?: boolean
+}
+
+export interface CreateCustomizeOptionBody {
+  id: string
+  label: string
+  price: number
+}
+
+export interface UpdateCustomizeOptionBody {
+  id: string
+  optionId: string
+  label: string
+  price: number
 }
 
 export interface CustomizeMutationResponse {
@@ -51,4 +71,3 @@ export interface CustomizeMutationResponse {
   message: string
   data: ApiCustomizeItem
 }
-
