@@ -128,6 +128,11 @@ export default function Customise() {
   const selectedCategoryForTypeModal =
     items.find((i) => i._id === editingTypeId) ?? null
 
+  const activeItem = useMemo(
+    () => (activeTab ? items.find((i) => i._id === activeTab) ?? null : null),
+    [items, activeTab],
+  )
+
   const handlePageChange = (p: number) => setPage(p)
   const handleLimitChange = (l: number) => {
     setLimit(l)
@@ -204,108 +209,133 @@ export default function Customise() {
             <p className="text-sm text-gray-600">
               Tabs match customization types from your API. Add types, then add options under each type.
             </p>
-            <Button onClick={handleAddType} className="bg-secondary text-white">
-              <Plus className="mr-2 h-4 w-4" />
-              Add customization type
-            </Button>
           </div>
 
           {showEmpty ? (
             <div className="rounded-lg border border-dashed border-gray-200 py-16 text-center text-gray-500">
               No customization types yet. Click “Add customization type” to create one.
+              <div className="mt-4 flex justify-center">
+                <Button type="button" onClick={handleAddType} className="bg-secondary text-white">
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Customization
+                </Button>
+              </div>
             </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap justify-start gap-1 overflow-x-auto bg-muted/50 p-1">
-                {items.map((item) => (
-                  <TabsTrigger
-                    key={item._id}
-                    value={item._id}
-                    className="max-w-[200px] truncate px-3 py-2 text-sm"
-                  >
-                    {item.name}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-
-              {items.map((item) => (
-                <TabsContent key={item._id} value={item._id} className="space-y-4">
-                  <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="rounded-sm bg-secondary-foreground px-3 py-1 text-xs font-medium text-accent">
-                        {item.type}
-                      </span>
-                      {item.isRequired ? (
-                        <span className="rounded-sm bg-amber-100 px-3 py-1 text-xs font-medium text-amber-900">
-                          Required
-                        </span>
-                      ) : (
-                        <span className="rounded-sm bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
-                          Optional
-                        </span>
-                      )}
-                      <div className="flex items-center gap-2 pl-2">
-                        <span className="text-sm text-gray-600">Active</span>
-                        <Switch
-                          checked={item.status}
-                          onCheckedChange={async () => {
-                            try {
-                              await updateCustomize({
-                                id: item._id,
-                                status: !item.status,
-                              }).unwrap()
-                            } catch {
-                              toast({
-                                title: 'Error',
-                                description: 'Failed to update status. Please try again.',
-                                variant: 'destructive',
-                              })
-                            }
-                          }}
-                        />
-                      </div>
-                    </div>
-                    <div className="flex flex-wrap justify-end gap-2">
-                      <Button variant="outline" size="sm" onClick={() => handleEditType(item)}>
-                        Edit type
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleAddOption(item)}
-                        className="bg-secondary text-white"
+            <div>
+              <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+                <TabsList className="mb-4 flex h-auto min-h-10 w-full flex-wrap items-center justify-between gap-1 overflow-x-auto bg-muted/50 p-1">
+                  <div className="flex min-w-0 flex-wrap gap-1">
+                    {items.map((tabItem) => (
+                      <TabsTrigger
+                        key={tabItem._id}
+                        value={tabItem._id}
+                        className="max-w-[200px] truncate px-3 py-2 text-sm"
                       >
-                        <Plus className="mr-1 h-4 w-4" />
-                        Add option
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        className="text-red-600 hover:text-red-700"
-                        onClick={() =>
-                          setDeleteTarget({ kind: 'category', item })
-                        }
-                      >
-                        Delete type
-                      </Button>
-                    </div>
+                        {tabItem.name}
+                      </TabsTrigger>
+                    ))}
                   </div>
 
-                  <OptionsTable
-                    options={item.options ?? []}
-                    categoryName={item.name}
-                    onEdit={(opt) => handleEditOption(item, opt)}
-                    onDelete={(opt) =>
-                      setDeleteTarget({
-                        kind: 'option',
-                        categoryId: item._id,
-                        categoryName: item.name,
-                        option: opt,
-                      })
-                    }
-                  />
-                </TabsContent>
-              ))}
-            </Tabs>
+                  <div className="flex shrink-0 items-center gap-2">
+                    <Button type="button" onClick={handleAddType} className="bg-secondary text-white">
+                      <Plus className="mr-2 h-4 w-4" />
+                      Add Customization
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={!activeItem}
+                      onClick={() => activeItem && handleEditType(activeItem)}
+                      className="bg-secondary text-white"
+                    >
+                      Edit type
+                    </Button>
+
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      disabled={!activeItem}
+                      className="bg-destructive text-white "
+                      onClick={() =>
+                        activeItem && setDeleteTarget({ kind: 'category', item: activeItem })
+                      }
+                    >
+                      Delete type
+                    </Button>
+                  </div>
+                </TabsList>
+
+                {items.map((item) => (
+                  <TabsContent key={item._id} value={item._id} className="space-y-4">
+                    <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="rounded-sm bg-secondary-foreground px-3 py-2 text-xs font-medium text-accent">
+                          {item.type}
+                        </span>
+                        {item.isRequired ? (
+                          <span className="rounded-sm bg-amber-100 px-3 py-2 text-xs font-medium text-amber-900">
+                            Required
+                          </span>
+                        ) : (
+                          <span className="rounded-sm bg-gray-100 px-3 py-2 text-xs font-medium text-gray-700">
+                            Optional
+                          </span>
+                        )}
+                        <div className="flex items-center gap-2 pl-2">
+                          {/* <span className="text-sm text-gray-600">Active</span> */}
+                          <Switch
+                            checked={item.status}
+                            onCheckedChange={async () => {
+                              try {
+                                await updateCustomize({
+                                  id: item._id,
+                                  status: !item.status,
+                                }).unwrap()
+                              } catch {
+                                toast({
+                                  title: 'Error',
+                                  description: 'Failed to update status. Please try again.',
+                                  variant: 'destructive',
+                                })
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                      <div className="flex flex-wrap justify-end gap-2">
+                        <Button
+                          type="button"
+                          size="sm"
+                          onClick={() => handleAddOption(item)}
+                          className="bg-primary text-white"
+                        >
+                          <Plus className="mr-1 h-4 w-4" />
+                          Add option
+                        </Button>
+                      </div>
+                    </div>
+
+                    <OptionsTable
+                      options={item.options ?? []}
+                      categoryName={item.name}
+                      onEdit={(opt) => handleEditOption(item, opt)}
+                      onDelete={(opt) =>
+                        setDeleteTarget({
+                          kind: 'option',
+                          categoryId: item._id,
+                          categoryName: item.name,
+                          option: opt,
+                        })
+                      }
+                    />
+                  </TabsContent>
+                ))}
+              </Tabs>
+            </div>
           )}
 
           {!showEmpty && (
