@@ -14,6 +14,7 @@ import {
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
 import { toast } from '@/utils/toast'
 import type { User, UserStatus } from '@/types'
+import Loading from '@/components/common/Loading'
 
 export default function UserList() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false)
@@ -175,9 +176,7 @@ export default function UserList() {
 
         <CardContent className="p-0">
           {showInitialLoading ? (
-            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-              Loading users...
-            </div>
+            <Loading />
           ) : null}
           {isError && !isFetching ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">

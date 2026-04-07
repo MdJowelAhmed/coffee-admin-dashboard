@@ -11,6 +11,7 @@ import { useGetOrdersQuery } from '@/redux/api/ordersApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
 import type { AdminOrder } from '@/redux/packageTypes/orders'
 import { cn } from '@/utils/cn'
+import Loading from '@/components/common/Loading'
 
 export default function OrderList() {
   const [isViewModalOpen, setIsViewModalOpen] = useState(false)
@@ -106,9 +107,7 @@ export default function OrderList() {
             )}
           >
             {isLoading ? (
-              <div className="px-6 py-16 text-center text-gray-500 text-sm">
-                Loading orders…
-              </div>
+              <Loading />
             ) : (
               <OrderTable
                 orders={orders}

@@ -14,6 +14,7 @@ import {
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
 import { toast } from '@/utils/toast'
 import type { SendMailPayload } from '@/types'
+import Loading from '@/components/common/Loading'
 
 export default function SubscriberList() {
   const [showWriteMail, setShowWriteMail] = useState(false)
@@ -114,9 +115,7 @@ export default function SubscriberList() {
 
         <CardContent className="p-0">
           {showInitialLoading ? (
-            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-              Loading subscribers...
-            </div>
+            <Loading />
           ) : null}
           {isError && !isFetching ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">

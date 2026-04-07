@@ -6,6 +6,7 @@ import { Pagination } from '@/components/common/Pagination'
 import { RevenueTable } from './components/RevenueTable'
 import { useGetRevenueQuery } from '@/redux/api/revenueApi'
 import { useUrlString, useUrlNumber } from '@/hooks/useUrlState'
+import Loading from '@/components/common/Loading'
 
 export default function RevenueList() {
   const [searchQuery, setSearchQuery] = useUrlString('search', '')
@@ -65,17 +66,15 @@ export default function RevenueList() {
         </CardHeader>
 
         <CardContent className="p-0">
-          {isFetching && items.length === 0 ? (
-            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-              Loading revenue...
-            </div>
-          ) : null}
+          {isFetching && (
+            <Loading />
+          )}
           {isError && !isFetching ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">
               Could not load revenue. Please try again.
             </div>
           ) : null}
-          {!(isFetching && items.length === 0) ? (
+          {!isFetching && items.length === 0 ? (
             <RevenueTable items={items} />
           ) : null}
 

@@ -14,6 +14,7 @@ import {
   useDeleteShopMutation,
 } from '@/redux/api/shopManagementApi'
 import { apiStoreToShop } from '@/redux/packageTypes/shop'
+import Loading from '@/components/common/Loading'
 
 const API_BASE = import.meta.env.VITE_API_BASE_URL
 
@@ -203,7 +204,7 @@ export default function ShopList() {
             </div>
           )}
           {listBusy && !data ? (
-            <div className="py-12 text-center text-muted-foreground">Loading shops…</div>
+            <Loading />
           ) : shops.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               No shops found.

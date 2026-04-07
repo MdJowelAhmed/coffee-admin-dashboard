@@ -22,6 +22,7 @@ import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditCustomizationTypeModal } from './AddEditCustomizationTypeModal'
 import { AddEditCustomizationOptionModal } from './AddEditCustomizationOptionModal'
 import { ConfirmDialog } from '@/components/common'
+import Loading from '@/components/common/Loading'
 
 type DeleteTarget =
   | { kind: 'category'; item: ApiCustomizeItem }
@@ -350,7 +351,7 @@ export default function Customise() {
           )}
 
           {(isLoading || isFetching) && (
-            <div className="pt-4 text-sm text-gray-500">Loading customization types…</div>
+            <Loading />
           )}
         </CardContent>
       </Card>

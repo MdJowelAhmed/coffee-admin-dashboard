@@ -4,6 +4,7 @@ import { CheckCircle2, Clock3, XCircle } from 'lucide-react'
 import { capitalize, formatCurrency } from '@/utils/formatters'
 import { format } from 'date-fns'
 import type { DashboardRecentOrder } from '@/redux/packageTypes/dashboardOverview'
+import Loading from '@/components/common/Loading'
 
 function displayStatus(orderStatus: string): string {
     return orderStatus
@@ -55,8 +56,8 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                     <CardTitle className="text-xl font-bold text-slate-800">Recent Order</CardTitle>
                 </CardHeader>
                 <CardContent className="p-0">
-                    {isLoading ? (
-                        <div className="py-16 text-center text-sm text-muted-foreground">Loading orders…</div>
+                    {isLoading  ? (
+                        <Loading />
                     ) : orders.length === 0 ? (
                         <div className="py-16 text-center text-sm text-muted-foreground">No recent orders.</div>
                     ) : (
@@ -92,7 +93,7 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                                                 key={order._id}
                                                 initial={{ opacity: 0, x: -20 }}
                                                 animate={{ opacity: 1, x: 0 }}
-                                                transition={{ delay: 0.05 * index }}
+                                                transition={{ delay: 0.09 * index }}
                                                 className="hover:bg-gray-50/50"
                                             >
                                                 <td className="px-6 py-4 text-sm font-medium text-slate-700">{sl}</td>

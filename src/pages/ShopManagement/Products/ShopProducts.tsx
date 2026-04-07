@@ -16,6 +16,7 @@ import { toast } from '@/utils/toast'
 import { formatCurrency } from '@/utils/formatters'
 import { AddEditShopProductModal } from './AddEditShopProductModal'
 import { imageUrl } from '@/utils/getImageUrl'
+import Loading from '@/components/common/Loading'
 
 function apiProductToPayload(
   p: ApiProduct,
@@ -216,8 +217,8 @@ export default function ShopProducts() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isLoading ? (
-            <div className="py-12 text-center text-muted-foreground">Loading products…</div>
+          {isLoading || isFetching ? (
+            <Loading />
           ) : items.length === 0 ? (
             <div className="py-12 text-center text-muted-foreground">
               No products yet. Add one to get started.
@@ -245,9 +246,6 @@ export default function ShopProducts() {
               onPageChange={handlePageChange}
               onItemsPerPageChange={handleLimitChange}
             />
-          )}
-          {isFetching && !isLoading && (
-            <div className="text-sm text-muted-foreground">Refreshing…</div>
           )}
         </CardContent>
       </Card>

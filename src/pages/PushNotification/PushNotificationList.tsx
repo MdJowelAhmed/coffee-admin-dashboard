@@ -10,6 +10,7 @@ import { NotificationFilterDropdown } from './components/NotificationFilterDropd
 import { SendNotificationModal } from './components/SendNotificationModal'
 import { useGetPushNotificationsQuery } from '@/redux/api/pushNotificationApi'
 import { useUrlString, useUrlNumber, useUrlParams } from '@/hooks/useUrlState'
+import Loading from '@/components/common/Loading'
 
 export default function PushNotificationList() {
   const [showSendModal, setShowSendModal] = useState(false)
@@ -127,9 +128,7 @@ export default function PushNotificationList() {
 
         <CardContent className="p-0">
           {showInitialLoading ? (
-            <div className="px-6 py-8 text-center text-sm text-muted-foreground">
-              Loading notifications…
-            </div>
+            <Loading />
           ) : null}
           {isError && !isFetching ? (
             <div className="px-6 py-8 text-center text-sm text-red-600">

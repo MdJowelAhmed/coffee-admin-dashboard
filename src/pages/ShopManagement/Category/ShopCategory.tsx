@@ -14,6 +14,7 @@ import {
   useUpdateCategoryMutation,
 } from '@/redux/api/CategoryApi'
 import type { Category } from '@/redux/packageTypes/category'
+import Loading from '@/components/common/Loading'
 
 function formatDateTime(iso: string) {
   const d = new Date(iso)
@@ -171,9 +172,9 @@ export default function ShopCategory() {
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">
-          {isFetching ? (
-            <div className="px-6 py-6 text-sm text-muted-foreground">Loading...</div>
-          ) : null}
+            {isFetching && (
+              <Loading />
+            )}
           <ShopCategoryTable
             items={categories}
             onEdit={handleEdit}

@@ -2,7 +2,7 @@
 
 const Loading = () => {
   return (
-    <div className="flex flex-col items-center justify-center gap-3 h-72 w-full">
+    <div className="flex flex-col items-center justify-center gap-3 h-96 w-full">
       
       <div className="relative flex items-center justify-center">
         
@@ -10,12 +10,12 @@ const Loading = () => {
         <div className="absolute h-16 w-16 rounded-full border-2 border-dashed border-primary animate-spin"></div>
 
         {/* center image */}
-        <div className="h-12 w-12 flex items-center justify-center ">
+        <div className="h-16 w-16 flex items-center justify-center ">
           <img
-            src="/favicon.svg"
+            src="/assets/pngtree-coffee.png"
             alt="loading"
-                width={40}
-            height={40}
+                width={50}
+            height={50}
             className="object-contain"
           />
         </div>

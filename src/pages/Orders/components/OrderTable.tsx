@@ -102,7 +102,7 @@ export function OrderTable({
                   key={order._id}
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.06 * index }}
+                  transition={{ delay: 0.09 * index }}
                   className="hover:bg-gray-50 transition-colors"
                 >
                   <td className="px-6 py-2">
