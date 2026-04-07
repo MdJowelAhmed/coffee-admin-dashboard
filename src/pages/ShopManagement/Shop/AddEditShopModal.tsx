@@ -431,7 +431,7 @@ export function AddEditShopModal({
           />
         </div>
 
-    
+
 
         <div className="space-y-2">
           <div>
@@ -505,25 +505,27 @@ export function AddEditShopModal({
           )}
         />
 
-        <FormTextarea
-          label="About Shop"
-          placeholder="Describe your shop..."
-          error={errors.aboutShop?.message}
-          required
-          rows={4}
-          {...register('aboutShop')}
-        />
-
-        <div>
-          <label className="text-sm font-medium mb-2 block">Shop Picture</label>
-          <ImageUploader
-            key={editingId ? `shop-${editingId}` : 'shop-new'}
-            value={image}
-            onChange={(f) => setImage(f)}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormTextarea
+            label="About Shop"
+            placeholder="Describe your shop..."
+            error={errors.aboutShop?.message}
+            required
+            rows={8}
+            {...register('aboutShop')}
           />
-          {!isEdit && (
-            <p className="text-xs text-muted-foreground mt-1">Required for new shops</p>
-          )}
+
+          <div>
+            <label className="text-sm font-medium mb-2 block">Shop Picture</label>
+            <ImageUploader
+              key={editingId ? `shop-${editingId}` : 'shop-new'}
+              value={image}
+              onChange={(f) => setImage(f)}
+            />
+            {/* {!isEdit && (
+              <p className="text-xs text-muted-foreground mt-1">Required for new shops</p>
+            )} */}
+          </div>
         </div>
 
         <div className="flex justify-end gap-3 pt-4 border-t">
