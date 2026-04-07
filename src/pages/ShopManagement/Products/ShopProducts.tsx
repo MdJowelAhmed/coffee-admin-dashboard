@@ -42,19 +42,32 @@ function ProductCard({
   onEdit,
   onDelete,
   onToggle,
+  index=0
 }: {
   product: ApiProduct
   categoryName: string
   onEdit: (p: ApiProduct) => void
   onDelete: (p: ApiProduct) => void
   onToggle: (p: ApiProduct) => void
+  index?: number
 }) {
   const customLabels =
     product.customizations?.map((c) => c.name).join(', ') || '—'
   const imgSrc = imageUrl(product.image)
 
   return (
-    <Card className="overflow-hidden border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
+  <motion.div 
+  initial={{ opacity: 0, y: 20, scale: 0.95 }}
+  animate={{ opacity: 1, y: 0, scale: 1 }}
+  transition={{
+    duration: 0.50,
+    delay: index * 0.15,
+    ease: [0.25, 0.1, 0.25, 1],
+  }}
+  whileHover={{ y: -4, scale: 1.02 }}
+  whileTap={{ scale: 0.98 }}
+  >
+      <Card className="overflow-hidden border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
       <div className="relative h-80 ">
         {imgSrc ? (
           <img src={imgSrc} alt={product.name} className="h-full w-full object-cover" />
@@ -115,6 +128,7 @@ function ProductCard({
         </div>
       </CardContent>
     </Card>
+  </motion.div>
   )
 }
 
@@ -199,7 +213,7 @@ export default function ShopProducts() {
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+      transition={{ duration: 0.9 }}
       className="space-y-6"
     >
       <Card className="border-0 bg-white shadow-sm">
@@ -225,9 +239,10 @@ export default function ShopProducts() {
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {items.map((product) => (
+              {items.map((product, index) => (
                 <ProductCard
                   key={product._id}
+                  index={index}
                   product={product}
                   categoryName={categoryNameById.get(product.category) ?? ''}
                   onEdit={handleEdit}

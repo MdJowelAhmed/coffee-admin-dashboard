@@ -68,7 +68,7 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                                         <th className="px-6 py-4 text-left text-sm font-bold">SL</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Order ID</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Items Names</th>
-                                        <th className="px-6 py-4 text-left text-sm font-bold">Date &amp; Time</th>
+                                        <th className="px-6 py-4 text-left text-sm font-bold">Date & Time</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Customer</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Item Number</th>
                                         <th className="px-6 py-4 text-left text-sm font-bold">Amount</th>
