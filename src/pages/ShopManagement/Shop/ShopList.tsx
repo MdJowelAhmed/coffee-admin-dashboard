@@ -33,7 +33,7 @@ function ShopCard({
           <img
             src={shop.shopPicture}
             alt={shop.shopName}
-            className="w-full h-full object-contain"
+            className="w-full h-full object-cover"
           />
         ) : (
           <div className="w-full h-full flex items-center justify-center text-muted-foreground text-sm">

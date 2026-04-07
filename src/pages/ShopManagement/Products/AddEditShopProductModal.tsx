@@ -286,7 +286,7 @@ export function AddEditShopProductModal({
       onClose={onClose}
       title={isEdit ? 'Edit product' : 'Add product'}
       size="xl"
-      className="bg-white"
+      className="bg-white max-w-3xl"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">

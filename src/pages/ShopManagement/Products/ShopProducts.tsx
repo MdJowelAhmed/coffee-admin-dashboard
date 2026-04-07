@@ -13,9 +13,10 @@ import {
 } from '@/redux/api/productsApi'
 import type { ApiProduct, ProductFormDataPayload } from '@/redux/packageTypes/products'
 import { toast } from '@/utils/toast'
-import { formatCurrency, resolveMediaUrl } from '@/utils/formatters'
+import { formatCurrency } from '@/utils/formatters'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditShopProductModal } from './AddEditShopProductModal'
+import { imageUrl } from '@/utils/getImageUrl'
 
 function apiProductToPayload(
   p: ApiProduct,
@@ -50,11 +51,11 @@ function ProductCard({
 }) {
   const customLabels =
     product.customizations?.map((c) => c.name).join(', ') || '—'
-  const imgSrc = resolveMediaUrl(product.image)
+  const imgSrc = imageUrl(product.image)
 
   return (
     <Card className="overflow-hidden border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative h-36 bg-muted">
+      <div className="relative h-80 ">
         {imgSrc ? (
           <img src={imgSrc} alt={product.name} className="h-full w-full object-cover" />
         ) : (
@@ -119,7 +120,7 @@ function ProductCard({
 
 export default function ShopProducts() {
   const [page, setPage] = useState(1)
-  const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
+  const [limit, setLimit] = useState(12)
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
   const [deleteTarget, setDeleteTarget] = useState<ApiProduct | null>(null)
