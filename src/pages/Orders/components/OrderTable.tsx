@@ -75,8 +75,9 @@ export function OrderTable({
         <thead>
           <tr className="bg-success text-slate-800">
             <th className="px-6 py-4 text-left text-sm font-bold">S.N</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Preview</th>
-            <th className="px-6 py-4 text-left text-sm font-bold">Order</th>
+            {/* <th className="px-6 py-4 text-left text-sm font-bold">Preview</th> */}
+            <th className="px-6 py-4 text-left text-sm font-bold">Order ID</th>
+            <th className="px-6 py-4 text-left text-sm font-bold">Items Names</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Date & Time</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Qty</th>
             <th className="px-6 py-4 text-left text-sm font-bold">Amount</th>
@@ -109,18 +110,20 @@ export function OrderTable({
                       {String(startIndex + index + 1).padStart(2, '0')}
                     </span>
                   </td>
-                  <td className="px-6 py-2">
+                  {/* <td className="px-6 py-2">
                     <div className="w-12 h-12 rounded-lg bg-amber-50 flex items-center justify-center border border-amber-100">
                       <Coffee className="h-6 w-6 text-amber-800/70" />
                     </div>
+                  </td> */}
+                  <td className="px-6 py-2">
+                    <span className="text-sm text-slate-700">
+                      {order.orderId}
+                    </span>
                   </td>
                   <td className="px-6 py-2">
                     <div className="flex flex-col max-w-[220px]">
                       <span className="text-sm font-semibold text-slate-800 truncate">
                         {lineItemSummary(order)}
-                      </span>
-                      <span className="text-xs text-gray-500 truncate">
-                        {order.orderId}
                       </span>
                     </div>
                   </td>
