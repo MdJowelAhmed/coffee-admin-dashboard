@@ -31,13 +31,6 @@ function firstLineTitle(order: DashboardRecentOrder): string {
     return `${first} +${order.items.length - 1}`
 }
 
-function itemThumb(order: DashboardRecentOrder): { src?: string; label: string } {
-    const img = order.customer?.profileImage?.trim()
-    const label = firstLineTitle(order).charAt(0).toUpperCase()
-    if (img) return { src: img, label }
-    return { label }
-}
-
 interface RecentActivityCardProps {
     orders: DashboardRecentOrder[]
     isLoading?: boolean
@@ -78,7 +71,6 @@ export function RecentActivityCard({ orders, isLoading }: RecentActivityCardProp
                                 <tbody className="divide-y divide-gray-100 text-accent-foreground">
                                     {orders.map((order, index) => {
                                         const sl = String(index + 1).padStart(2, '0')
-                                        const thumb = itemThumb(order)
                                         const created = new Date(order.createdAt)
                                         const dateStr = format(created, 'dd MMM yyyy')
                                         const timeStr = format(created, 'h:mm a')

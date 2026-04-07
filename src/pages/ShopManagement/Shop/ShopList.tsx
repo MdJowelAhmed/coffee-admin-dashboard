@@ -12,6 +12,7 @@ import { AddEditShopModal } from './AddEditShopModal'
 import {
   useGetShopsQuery,
   useDeleteShopMutation,
+  useConnectStripeAccountMutation,
 } from '@/redux/api/shopManagementApi'
 import { apiStoreToShop } from '@/redux/packageTypes/shop'
 import Loading from '@/components/common/Loading'
@@ -22,10 +23,12 @@ function ShopCard({
   shop,
   onEdit,
   onDelete,
+  onConnectStripe,
 }: {
   shop: Shop
   onEdit: (s: Shop) => void
   onDelete: (s: Shop) => void
+  onConnectStripe: (s: Shop) => void
 }) {
   return (
     <Card className="overflow-hidden border border-gray-100 shadow-sm hover:shadow-md transition-shadow">
@@ -93,6 +96,16 @@ function ShopCard({
           >
             Delete
           </Button>
+          {!shop.isConnectedAccountReady && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1 text-secondary hover:border-secondary/40"
+              onClick={() => onConnectStripe(shop)}
+            >
+              Connect Stripe
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
@@ -110,6 +123,7 @@ export default function ShopList() {
   const [isDeleting, setIsDeleting] = useState(false)
 
   const [deleteShop, { isLoading: isDeleteLoading }] = useDeleteShopMutation()
+  const [connectStripeAccount] = useConnectStripeAccountMutation()
 
   const { data, isLoading, isFetching, error } = useGetShopsQuery({
     page,
@@ -158,6 +172,33 @@ export default function ShopList() {
       })
     } finally {
       setIsDeleting(false)
+    }
+  }
+
+  const handleConnectStripe = async (shop: Shop) => {
+    try {
+      const res = (await connectStripeAccount({ id: shop.id }).unwrap()) as {
+        success?: boolean
+        message?: string
+        data?: { url?: string }
+      }
+      const url = res?.data?.url
+      if (url) {
+        window.open(url, '_blank', 'noopener,noreferrer')
+        toast({ title: 'Stripe', description: 'Open Stripe onboarding in a new tab.' })
+      } else {
+        toast({
+          title: 'Stripe',
+          description: 'Connected, but no onboarding URL returned.',
+          variant: 'destructive',
+        })
+      }
+    } catch {
+      toast({
+        title: 'Stripe connect failed',
+        description: 'Could not start Stripe onboarding. Please try again.',
+        variant: 'destructive',
+      })
     }
   }
 
@@ -217,6 +258,7 @@ export default function ShopList() {
                   shop={shop}
                   onEdit={handleEdit}
                   onDelete={setDeleteTarget}
+                  onConnectStripe={handleConnectStripe}
                 />
               ))}
             </div>

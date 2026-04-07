@@ -37,6 +37,8 @@ export interface ApiStoreItem {
   updatedAt: string
   timezone?: string
   stripeAccountId?: string
+  /** Stripe onboarding completed */
+  isConnectedAccountReady?: boolean
   __v?: number
 }
 
@@ -150,6 +152,7 @@ export function apiStoreToShop(item: ApiStoreItem, apiBaseUrl: string): Shop {
     aboutShop: item.about ?? '',
     shopPicture: resolveStoreImageUrl(item.image, apiBaseUrl),
     isActive: item.isActive ?? true,
+    isConnectedAccountReady: item.isConnectedAccountReady ?? false,
     createdAt: item.createdAt,
     updatedAt: item.updatedAt,
   }

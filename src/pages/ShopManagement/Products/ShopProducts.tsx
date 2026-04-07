@@ -68,7 +68,7 @@ function ProductCard({
   whileTap={{ scale: 0.98 }}
   >
       <Card className="overflow-hidden border border-gray-100 shadow-sm transition-shadow hover:shadow-md">
-      <div className="relative h-80 ">
+      <div className="relative h-60 ">
         {imgSrc ? (
           <img src={imgSrc} alt={product.name} className="h-full w-full object-cover" />
         ) : (

@@ -8,7 +8,6 @@ import type {
 export type GetShopsArgs = {
   page: number
   limit: number
-  /** Query param name matches backend: `searchterm` */
   searchTerm?: string
 }
 
@@ -33,7 +32,7 @@ const shopManagementApi = baseApi.injectEndpoints({
         params: {
           page,
           limit,
-          ...(searchTerm?.trim() ? { searchTerm: searchTerm.trim() } : {}),
+          ...(searchTerm?.trim() ? { searchterm: searchTerm.trim() } : {}),
         },
       }),
       transformResponse: (response: GetStoresApiResponse): StoreListResult => ({
@@ -77,6 +76,13 @@ const shopManagementApi = baseApi.injectEndpoints({
       }),
       invalidatesTags: ['Stores'],
     }),
+    connectStripeAccount: builder.mutation<unknown, { id: string }>({
+      query: ({ id }) => ({
+        url: `/admin/stores/${id}/connect-stripe`,
+        method: 'POST',
+      }),
+      invalidatesTags: ['Stores'],
+    }),
   }),
 })
 
@@ -85,4 +91,5 @@ export const {
   useCreateShopMutation,
   useUpdateShopMutation,
   useDeleteShopMutation,
+  useConnectStripeAccountMutation,
 } = shopManagementApi

@@ -613,6 +613,7 @@ export interface Shop {
   aboutShop: string
   shopPicture?: string
   isActive: boolean
+  isConnectedAccountReady?: boolean
   createdAt: string
   updatedAt: string
 }
