@@ -14,7 +14,6 @@ import {
 import type { ApiProduct, ProductFormDataPayload } from '@/redux/packageTypes/products'
 import { toast } from '@/utils/toast'
 import { formatCurrency } from '@/utils/formatters'
-import { DEFAULT_PAGINATION } from '@/utils/constants'
 import { AddEditShopProductModal } from './AddEditShopProductModal'
 import { imageUrl } from '@/utils/getImageUrl'
 

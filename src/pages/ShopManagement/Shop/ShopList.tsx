@@ -4,7 +4,7 @@ import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Pagination, ConfirmDialog } from '@/components/common'
+import { Pagination, ConfirmDialog, SearchInput } from '@/components/common'
 import type { Shop } from '@/types'
 import { toast } from '@/utils/toast'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
@@ -101,8 +101,7 @@ function ShopCard({
 export default function ShopList() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
-  const [search, setSearch] = useState('')
-  const [debouncedSearch, setDebouncedSearch] = useState('')
+  const [searchTerm, setSearchTerm] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -114,7 +113,7 @@ export default function ShopList() {
   const { data, isLoading, isFetching, error } = useGetShopsQuery({
     page,
     limit,
-    search: debouncedSearch || undefined,
+    searchTerm: searchTerm.trim() || undefined,
   })
 
   const shops: Shop[] = useMemo(
@@ -131,12 +130,6 @@ export default function ShopList() {
   const handlePageChange = (newPage: number) => setPage(newPage)
   const handleLimitChange = (newLimit: number) => {
     setLimit(newLimit)
-    setPage(1)
-  }
-
-  const handleSearchSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    setDebouncedSearch(search.trim())
     setPage(1)
   }
 
@@ -187,18 +180,16 @@ export default function ShopList() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <form onSubmit={handleSearchSubmit} className="flex gap-2">
-              <input
-                type="search"
-                placeholder="Search shops…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="h-9 rounded-md border border-input bg-background px-3 text-sm w-[200px] md:w-[240px]"
-              />
-              <Button type="submit" variant="secondary" size="sm">
-                Search
-              </Button>
-            </form>
+            <SearchInput
+              value={searchTerm}
+              onChange={(v) => {
+                setSearchTerm(v)
+                setPage(1)
+              }}
+              placeholder="Search shops…"
+              debounceMs={400}
+              className="w-[200px] md:w-[260px]"
+            />
             <Button onClick={handleAdd} className="bg-primary text-white">
               <Plus className="h-4 w-4 mr-2" />
               Add Shop

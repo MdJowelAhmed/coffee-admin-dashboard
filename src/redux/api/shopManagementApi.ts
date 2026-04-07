@@ -8,7 +8,8 @@ import type {
 export type GetShopsArgs = {
   page: number
   limit: number
-  search?: string
+  /** Query param name matches backend: `searchterm` */
+  searchTerm?: string
 }
 
 export type CreateShopArgs = {
@@ -26,13 +27,13 @@ export type UpdateShopArgs = {
 const shopManagementApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getShops: builder.query<StoreListResult, GetShopsArgs>({
-      query: ({ page, limit, search }) => ({
+      query: ({ page, limit, searchTerm }) => ({
         url: '/admin/stores',
         method: 'GET',
         params: {
           page,
           limit,
-          ...(search?.trim() ? { search: search.trim() } : {}),
+          ...(searchTerm?.trim() ? { searchTerm: searchTerm.trim() } : {}),
         },
       }),
       transformResponse: (response: GetStoresApiResponse): StoreListResult => ({

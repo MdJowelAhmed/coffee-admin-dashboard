@@ -1,17 +1,17 @@
 import { useEffect, useMemo, useState } from 'react'
-import { useForm, Controller } from 'react-hook-form'
+import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { ChevronDown } from 'lucide-react'
-import { ModalWrapper, FormInput, FormSelect, FormTextarea, ImageUploader } from '@/components/common'
-import { Button } from '@/components/ui/button'
-import { Switch } from '@/components/ui/switch'
 import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuTrigger,
-  DropdownMenuCheckboxItem,
-} from '@/components/ui/dropdown-menu'
+  ModalWrapper,
+  FormInput,
+  FormSelect,
+  FormMultiSelect,
+  FormTextarea,
+  ImageUploader,
+} from '@/components/common'
+import { Button } from '@/components/ui/button'
+import { MAX_IMAGE_SIZE } from '@/utils/constants'
 import { useGetCategoriesQuery } from '@/redux/api/CategoryApi'
 import { useGetCustomizeQuery } from '@/redux/api/customizeApi'
 import {
@@ -44,76 +44,6 @@ interface AddEditShopProductModalProps {
   product: ApiProduct | null
 }
 
-function CustomizationIdsMultiSelect({
-  options,
-  selectedIds,
-  onChange,
-  disabled,
-}: {
-  options: { id: string; name: string }[]
-  selectedIds: string[]
-  onChange: (ids: string[]) => void
-  disabled?: boolean
-}) {
-  const idSet = useMemo(() => new Set(selectedIds), [selectedIds])
-  const toggle = (id: string) => {
-    if (idSet.has(id)) {
-      onChange(selectedIds.filter((x) => x !== id))
-    } else {
-      onChange([...selectedIds, id])
-    }
-  }
-  const display =
-    selectedIds.length > 0
-      ? options
-          .filter((o) => idSet.has(o.id))
-          .map((o) => o.name)
-          .join(', ')
-      : 'Select customization types (e.g. Flavour, Milk)…'
-
-  return (
-    <div className="space-y-1.5">
-      <label className="text-sm font-medium">Customization types</label>
-      <p className="text-xs text-muted-foreground">
-        Each selected group’s ID is sent as <code className="text-xs">customizationIds</code> to the
-        API.
-      </p>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild disabled={disabled}>
-          <Button
-            variant="outline"
-            className="h-11 w-full justify-between font-normal"
-            type="button"
-          >
-            <span className="truncate text-left">{display}</span>
-            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
-          </Button>
-        </DropdownMenuTrigger>
-        <DropdownMenuContent
-          align="start"
-          className="max-h-60 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto"
-        >
-          {options.length === 0 ? (
-            <p className="px-2 py-4 text-sm text-muted-foreground">
-              No customization types found. Add them under Shop → Customise.
-            </p>
-          ) : (
-            options.map((opt) => (
-              <DropdownMenuCheckboxItem
-                key={opt.id}
-                checked={idSet.has(opt.id)}
-                onCheckedChange={() => toggle(opt.id)}
-              >
-                {opt.name}
-              </DropdownMenuCheckboxItem>
-            ))
-          )}
-        </DropdownMenuContent>
-      </DropdownMenu>
-    </div>
-  )
-}
-
 export function AddEditShopProductModal({
   open,
   onClose,
@@ -140,11 +70,11 @@ export function AddEditShopProductModal({
   const [createProduct, { isLoading: creating }] = useCreateProductMutation()
   const [updateProduct, { isLoading: updating }] = useUpdateProductMutation()
 
-  const customizationOptions = useMemo(
+  const customizationSelectOptions: SelectOption[] = useMemo(
     () =>
       (customizeResult?.items ?? []).map((item) => ({
-        id: item._id,
-        name: item.name,
+        value: item._id,
+        label: item.name,
       })),
     [customizeResult?.items],
   )
@@ -173,7 +103,6 @@ export function AddEditShopProductModal({
     reset,
     setValue,
     watch,
-    control,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
     resolver: zodResolver(schema),
@@ -191,7 +120,6 @@ export function AddEditShopProductModal({
 
   const watchedCategoryId = watch('categoryId')
   const watchedStoreId = watch('storeId')
-  const watchedIsActive = watch('isActive')
 
   useEffect(() => {
     if (!open) return
@@ -234,9 +162,9 @@ export function AddEditShopProductModal({
     isActive: data.isActive,
     dietaryLabels: data.dietaryLabels
       ? data.dietaryLabels
-          .split(',')
-          .map((s) => s.trim())
-          .filter(Boolean)
+        .split(',')
+        .map((s) => s.trim())
+        .filter(Boolean)
       : [],
     customizationIds: customizationIds.filter(Boolean),
   })
@@ -351,21 +279,29 @@ export function AddEditShopProductModal({
           />
         </div>
 
-        <FormInput
-          label="Dietary labels"
-          placeholder="e.g. Vegan, Gluten-Free (comma separated)"
-          error={errors.dietaryLabels?.message}
-          {...register('dietaryLabels')}
-        />
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormInput
+            label="Dietary labels"
+            placeholder="e.g. Vegan, Gluten-Free (comma separated)"
+            error={errors.dietaryLabels?.message}
+            {...register('dietaryLabels')}
+          />
 
-        <CustomizationIdsMultiSelect
-          options={customizationOptions}
-          selectedIds={customizationIds}
-          onChange={setCustomizationIds}
-          disabled={customizeLoading}
-        />
+          <FormMultiSelect
+            label="Customization types"
+            value={customizationIds}
+            options={customizationSelectOptions}
+            onChange={setCustomizationIds}
+            placeholder={
+              customizeLoading ? 'Loading…' : 'Select customization types (e.g. Flavour, Milk)'
+            }
+            disabled={listsLoading || customizeLoading}
+            helperText="Selected IDs are sent as customizationIds."
+            emptyMessage="No customization types found. Add them under Shop → Customise."
+          />
+        </div>
 
-        <div className="flex items-center gap-3 rounded-md border p-3">
+        {/* <div className="flex items-center gap-3 rounded-md border p-3">
           <Controller
             name="isActive"
             control={control}
@@ -376,18 +312,18 @@ export function AddEditShopProductModal({
           <label htmlFor="product-active" className="text-sm font-medium">
             Product is active {watchedIsActive ? '(visible)' : '(hidden)'}
           </label>
-        </div>
+        </div> */}
 
         <div>
           <label className="mb-2 block text-sm font-medium">
             Image {!isEdit ? <span className="text-destructive">*</span> : null}
           </label>
-          <p className="mb-2 text-xs text-muted-foreground">
-            {isEdit
-              ? 'Leave unchanged to keep the current image, or upload a new file to replace it.'
-              : 'Uploaded as multipart field `image` alongside JSON `data`.'}
-          </p>
-          <ImageUploader value={image} onChange={(f) => setImage(f)} />
+      
+          <ImageUploader
+            value={image}
+            onChange={(f) => setImage(f)}
+            maxSize={MAX_IMAGE_SIZE}
+          />
         </div>
 
         <div className="flex justify-end gap-3 pt-4">
