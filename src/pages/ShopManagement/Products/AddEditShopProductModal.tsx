@@ -1,28 +1,38 @@
-import { useEffect, useState, useMemo } from 'react'
-import { useForm } from 'react-hook-form'
+import { useEffect, useMemo, useState } from 'react'
+import { useForm, Controller } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ChevronDown } from 'lucide-react'
-import { ModalWrapper, FormInput, FormSelect, ImageUploader } from '@/components/common'
+import { ModalWrapper, FormInput, FormSelect, FormTextarea, ImageUploader } from '@/components/common'
 import { Button } from '@/components/ui/button'
+import { Switch } from '@/components/ui/switch'
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuTrigger,
   DropdownMenuCheckboxItem,
 } from '@/components/ui/dropdown-menu'
-import { useAppDispatch, useAppSelector } from '@/redux/hooks'
-import { addShopProduct, updateShopProduct } from '@/redux/slices/shopProductSlice'
-import type { ShopProduct, ShopProductMilkOrSyrup } from '@/types'
+import { useGetCategoriesQuery } from '@/redux/api/CategoryApi'
+import { useGetCustomizeQuery } from '@/redux/api/customizeApi'
+import {
+  useCreateProductMutation,
+  useUpdateProductMutation,
+} from '@/redux/api/productsApi'
+import { useGetShopsQuery } from '@/redux/api/shopManagementApi'
+import type { ApiProduct, ProductFormDataPayload } from '@/redux/packageTypes/products'
 import type { SelectOption } from '@/types'
 import { toast } from '@/utils/toast'
+import { resolveMediaUrl } from '@/utils/formatters'
 
 const schema = z.object({
-  itemsName: z.string().min(1, 'Item name is required'),
-  price: z.number().min(0, 'Price must be 0 or more'),
+  name: z.string().min(1, 'Name is required'),
+  description: z.string().min(1, 'Description is required'),
+  basePrice: z.number().min(0, 'Price must be 0 or more'),
   categoryId: z.string().min(1, 'Category is required'),
-  tags: z.string().min(0),
-  pickupTime: z.string().min(1, 'Pickup time is required'),
+  storeId: z.string().min(1, 'Store is required'),
+  readyTime: z.number().int().min(1, 'Ready time must be at least 1 minute'),
+  isActive: z.boolean(),
+  dietaryLabels: z.string(),
 })
 
 type FormData = z.infer<typeof schema>
@@ -31,63 +41,70 @@ interface AddEditShopProductModalProps {
   open: boolean
   onClose: () => void
   editingId: string | null
-  product: ShopProduct | null
+  product: ApiProduct | null
 }
 
-function CustomizeMultiSelect({
-  label,
+function CustomizationIdsMultiSelect({
   options,
-  selected,
-  onSelectionChange,
+  selectedIds,
+  onChange,
+  disabled,
 }: {
-  label: string
-  options: { id: string; name: string; price: number }[]
-  selected: ShopProductMilkOrSyrup[]
-  onSelectionChange: (items: ShopProductMilkOrSyrup[]) => void
+  options: { id: string; name: string }[]
+  selectedIds: string[]
+  onChange: (ids: string[]) => void
+  disabled?: boolean
 }) {
-  const selectedIds = useMemo(() => new Set(selected.map((s) => s.id)), [selected])
-  const displayText =
-    selected.length > 0
-      ? selected.map((s) => s.name).join(', ')
-      : `Select ${label}...`
-
-  const toggle = (item: { id: string; name: string; price: number }) => {
-    if (selectedIds.has(item.id)) {
-      onSelectionChange(selected.filter((s) => s.id !== item.id))
+  const idSet = useMemo(() => new Set(selectedIds), [selectedIds])
+  const toggle = (id: string) => {
+    if (idSet.has(id)) {
+      onChange(selectedIds.filter((x) => x !== id))
     } else {
-      onSelectionChange([...selected, item])
+      onChange([...selectedIds, id])
     }
   }
+  const display =
+    selectedIds.length > 0
+      ? options
+          .filter((o) => idSet.has(o.id))
+          .map((o) => o.name)
+          .join(', ')
+      : 'Select customization types (e.g. Flavour, Milk)…'
 
   return (
     <div className="space-y-1.5">
-      <label className="text-sm font-medium">{label}</label>
+      <label className="text-sm font-medium">Customization types</label>
+      <p className="text-xs text-muted-foreground">
+        Each selected group’s ID is sent as <code className="text-xs">customizationIds</code> to the
+        API.
+      </p>
       <DropdownMenu>
-        <DropdownMenuTrigger asChild>
+        <DropdownMenuTrigger asChild disabled={disabled}>
           <Button
             variant="outline"
-            className="w-full justify-between font-normal h-11"
+            className="h-11 w-full justify-between font-normal"
+            type="button"
           >
-            <span className="truncate text-left">
-              {displayText}
-            </span>
-            <ChevronDown className="h-4 w-4 opacity-50" />
+            <span className="truncate text-left">{display}</span>
+            <ChevronDown className="h-4 w-4 shrink-0 opacity-50" />
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="start" className="w-[var(--radix-dropdown-menu-trigger-width)] max-h-60 overflow-y-auto">
+        <DropdownMenuContent
+          align="start"
+          className="max-h-60 w-[var(--radix-dropdown-menu-trigger-width)] overflow-y-auto"
+        >
           {options.length === 0 ? (
-            <p className="px-2 py-4 text-sm text-muted-foreground">No options available</p>
+            <p className="px-2 py-4 text-sm text-muted-foreground">
+              No customization types found. Add them under Shop → Customise.
+            </p>
           ) : (
             options.map((opt) => (
               <DropdownMenuCheckboxItem
                 key={opt.id}
-                checked={selectedIds.has(opt.id)}
-                onCheckedChange={() => toggle(opt)}
+                checked={idSet.has(opt.id)}
+                onCheckedChange={() => toggle(opt.id)}
               >
-                <span className="flex-1">{opt.name}</span>
-                <span className="text-xs text-muted-foreground ml-2">
-                  +{opt.price.toFixed(2)}
-                </span>
+                {opt.name}
               </DropdownMenuCheckboxItem>
             ))
           )}
@@ -97,201 +114,279 @@ function CustomizeMultiSelect({
   )
 }
 
-const pickupTimeOptions: SelectOption[] = [
-  { value: '5 min', label: '5 min' },
-  { value: '10 min', label: '10 min' },
-  { value: '15 min', label: '15 min' },
-  { value: '20 min', label: '20 min' },
-  { value: '25 min', label: '25 min' },
-  { value: '30 min', label: '30 min' },
-  { value: '35 min', label: '35 min' },
-  { value: '40 min', label: '40 min' },
-  { value: '45 min', label: '45 min' },
-  { value: '50 min', label: '50 min' },
-  { value: '55 min', label: '55 min' },
-  { value: '1 hour', label: '1 hour' },
-]
-
 export function AddEditShopProductModal({
   open,
   onClose,
   editingId,
   product,
 }: AddEditShopProductModalProps) {
-  const dispatch = useAppDispatch()
-  const categories = useAppSelector((s) => s.shopCategories.list)
-  const milkTypes = useAppSelector((s) => s.milkTypes.filteredList.filter((m) => m.isActive))
-  const syrupTypes = useAppSelector((s) => s.syrupTypes.filteredList.filter((s) => s.isActive))
-
   const isEdit = !!editingId
   const [image, setImage] = useState<File | string | null>(null)
-  const [selectedMilkTypes, setSelectedMilkTypes] = useState<ShopProductMilkOrSyrup[]>([])
-  const [selectedSyrupTypes, setSelectedSyrupTypes] = useState<ShopProductMilkOrSyrup[]>([])
+  const [customizationIds, setCustomizationIds] = useState<string[]>([])
 
-  const milkOptions = useMemo(
-    () => milkTypes.map((m) => ({ id: m.id, name: m.name, price: m.price })),
-    [milkTypes]
+  const { data: shopsResult, isLoading: shopsLoading } = useGetShopsQuery({
+    page: 1,
+    limit: 200,
+  })
+  const { data: categoriesResult, isLoading: categoriesLoading } = useGetCategoriesQuery({
+    page: 1,
+    limit: 200,
+  })
+  const { data: customizeResult, isLoading: customizeLoading } = useGetCustomizeQuery({
+    page: 1,
+    limit: 200,
+  })
+
+  const [createProduct, { isLoading: creating }] = useCreateProductMutation()
+  const [updateProduct, { isLoading: updating }] = useUpdateProductMutation()
+
+  const customizationOptions = useMemo(
+    () =>
+      (customizeResult?.items ?? []).map((item) => ({
+        id: item._id,
+        name: item.name,
+      })),
+    [customizeResult?.items],
   )
-  const syrupOptions = useMemo(
-    () => syrupTypes.map((s) => ({ id: s.id, name: s.name, price: s.price })),
-    [syrupTypes]
+
+  const storeOptions: SelectOption[] = useMemo(
+    () =>
+      (shopsResult?.items ?? []).map((s) => ({
+        value: s._id,
+        label: s.name,
+      })),
+    [shopsResult?.items],
   )
 
   const categoryOptions: SelectOption[] = useMemo(
-    () => categories.map((c) => ({ value: c.id, label: c.name })),
-    [categories]
+    () =>
+      (categoriesResult?.items ?? []).map((c) => ({
+        value: c.id,
+        label: c.name,
+      })),
+    [categoriesResult?.items],
   )
 
-  const { register, handleSubmit, reset, setValue, watch, formState: { errors, isSubmitting } } = useForm<FormData>({
+  const {
+    register,
+    handleSubmit,
+    reset,
+    setValue,
+    watch,
+    control,
+    formState: { errors, isSubmitting },
+  } = useForm<FormData>({
     resolver: zodResolver(schema),
     defaultValues: {
-      itemsName: '',
-      price: 0,
+      name: '',
+      description: '',
+      basePrice: 0,
       categoryId: '',
-      tags: '',
-      pickupTime: '15 min',
+      storeId: '',
+      readyTime: 5,
+      isActive: true,
+      dietaryLabels: '',
     },
   })
 
   const watchedCategoryId = watch('categoryId')
-  const watchedPickupTime = watch('pickupTime')
+  const watchedStoreId = watch('storeId')
+  const watchedIsActive = watch('isActive')
 
   useEffect(() => {
-    if (open) {
-      if (isEdit && product) {
-        reset({
-          itemsName: product.itemsName,
-          price: product.price,
-          categoryId: product.categoryId,
-          tags: product.tags.join(', '),
-          pickupTime: product.pickupTime,
-        })
-        setImage(product.itemsPicture || null)
-        setSelectedMilkTypes(product.milkTypes ?? [])
-        setSelectedSyrupTypes(product.syrupTypes ?? [])
-      } else {
-        reset({
-          itemsName: '',
-          price: 0,
-          categoryId: '',
-          tags: '',
-          pickupTime: '15 min',
-        })
-        setImage(null)
-        setSelectedMilkTypes([])
-        setSelectedSyrupTypes([])
-      }
+    if (!open) return
+    if (isEdit && product) {
+      reset({
+        name: product.name,
+        description: product.description,
+        basePrice: product.basePrice,
+        categoryId: product.category,
+        storeId: product.store._id,
+        readyTime: product.readyTime,
+        isActive: product.isActive,
+        dietaryLabels: product.dietaryLabels.join(', '),
+      })
+      setImage(product.image ? resolveMediaUrl(product.image) : null)
+      setCustomizationIds(product.customizations.map((c) => c._id))
+    } else {
+      reset({
+        name: '',
+        description: '',
+        basePrice: 0,
+        categoryId: '',
+        storeId: '',
+        readyTime: 5,
+        isActive: true,
+        dietaryLabels: '',
+      })
+      setImage(null)
+      setCustomizationIds([])
     }
   }, [open, isEdit, product, reset])
 
-  const onSubmit = (data: FormData) => {
-    const now = new Date().toISOString()
-    const tags = data.tags
-      ? data.tags.split(',').map((t) => t.trim()).filter(Boolean)
-      : []
-    const picture =
-      typeof image === 'string' ? image : image ? URL.createObjectURL(image) : undefined
-    const categoryName = categories.find((c) => c.id === data.categoryId)?.name ?? ''
+  const buildPayload = (data: FormData): ProductFormDataPayload => ({
+    store: data.storeId,
+    category: data.categoryId,
+    name: data.name,
+    description: data.description,
+    basePrice: data.basePrice,
+    readyTime: data.readyTime,
+    isActive: data.isActive,
+    dietaryLabels: data.dietaryLabels
+      ? data.dietaryLabels
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+      : [],
+    customizationIds: customizationIds.filter(Boolean),
+  })
 
-    const payload: ShopProduct = {
-      id: isEdit && product ? product.id : Date.now().toString(),
-      itemsName: data.itemsName,
-      price: data.price,
-      categoryId: data.categoryId,
-      categoryName,
-      tags,
-      customizeType: 'both',
-      pickupTime: data.pickupTime,
-      itemsPicture: picture,
-      milkTypes: selectedMilkTypes,
-      syrupTypes: selectedSyrupTypes,
-      isActive: isEdit && product ? product.isActive : true,
-      createdAt: isEdit && product ? product.createdAt : now,
-      updatedAt: now,
+  const onSubmit = async (data: FormData) => {
+    if (!isEdit && !(image instanceof File)) {
+      toast({
+        title: 'Image required',
+        description: 'Please upload a product image.',
+        variant: 'destructive',
+      })
+      return
     }
-    if (isEdit) {
-      dispatch(updateShopProduct(payload))
-      toast({ title: 'Updated', description: 'Product updated successfully.' })
-    } else {
-      dispatch(addShopProduct(payload))
-      toast({ title: 'Added', description: 'Product added successfully.' })
+
+    const payload = buildPayload(data)
+
+    try {
+      if (isEdit && product) {
+        await updateProduct({
+          id: product._id,
+          data: payload,
+          image: image instanceof File ? image : undefined,
+        }).unwrap()
+        toast({ title: 'Updated', description: 'Product updated successfully.' })
+      } else {
+        await createProduct({
+          data: payload,
+          image: image as File,
+        }).unwrap()
+        toast({ title: 'Added', description: 'Product created successfully.' })
+      }
+      onClose()
+    } catch {
+      toast({
+        title: 'Error',
+        description: 'Could not save the product. Try again.',
+        variant: 'destructive',
+      })
     }
-    onClose()
   }
+
+  const listsLoading = shopsLoading || categoriesLoading || customizeLoading
 
   return (
     <ModalWrapper
       open={open}
       onClose={onClose}
-      title={isEdit ? 'Edit Product' : 'Add Product'}
+      title={isEdit ? 'Edit product' : 'Add product'}
       size="xl"
       className="bg-white"
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
-        <FormInput
-          label="Items Name"
-          placeholder="Enter item name"
-          error={errors.itemsName?.message}
-          required
-          {...register('itemsName')}
-        />
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <FormInput
-            label="Price"
-            type="number"
-            step="0.01"
-            min="0"
-            placeholder="0.00"
-            error={errors.price?.message}
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormSelect
+            label="Store"
+            value={watchedStoreId}
+            options={storeOptions}
+            onChange={(v) => setValue('storeId', v)}
+            placeholder={listsLoading ? 'Loading stores…' : 'Select store'}
+            error={errors.storeId?.message}
             required
-            {...register('price', { valueAsNumber: true })}
+            disabled={listsLoading}
           />
           <FormSelect
             label="Category"
             value={watchedCategoryId}
             options={categoryOptions}
             onChange={(v) => setValue('categoryId', v)}
-            placeholder="Select category"
+            placeholder={listsLoading ? 'Loading categories…' : 'Select category'}
             error={errors.categoryId?.message}
             required
+            disabled={listsLoading}
           />
         </div>
 
         <FormInput
-          label="Tags"
-          placeholder="e.g. hot, popular, new (comma separated)"
-          error={errors.tags?.message}
-          {...register('tags')}
-        />
-
-        <FormSelect
-          label="Pickup Time"
-          value={watchedPickupTime}
-          options={pickupTimeOptions}
-          onChange={(v) => setValue('pickupTime', v, { shouldValidate: true })}
-          placeholder="Select pickup time"
-          error={errors.pickupTime?.message}
+          label="Product name"
+          placeholder="e.g. Double Espresso"
+          error={errors.name?.message}
           required
+          {...register('name')}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <CustomizeMultiSelect
-            label="Milk Type"
-            options={milkOptions}
-            selected={selectedMilkTypes}
-            onSelectionChange={setSelectedMilkTypes}
+        <FormTextarea
+          label="Description"
+          placeholder="Short description for customers"
+          error={errors.description?.message}
+          required
+          rows={4}
+          {...register('description')}
+        />
+
+        <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+          <FormInput
+            label="Base price"
+            type="number"
+            step="0.01"
+            min="0"
+            placeholder="0.00"
+            error={errors.basePrice?.message}
+            required
+            {...register('basePrice', { valueAsNumber: true })}
           />
-          <CustomizeMultiSelect
-            label="Syrup Type"
-            options={syrupOptions}
-            selected={selectedSyrupTypes}
-            onSelectionChange={setSelectedSyrupTypes}
+          <FormInput
+            label="Ready time (minutes)"
+            type="number"
+            min="1"
+            placeholder="5"
+            error={errors.readyTime?.message}
+            required
+            {...register('readyTime', { valueAsNumber: true })}
           />
         </div>
 
+        <FormInput
+          label="Dietary labels"
+          placeholder="e.g. Vegan, Gluten-Free (comma separated)"
+          error={errors.dietaryLabels?.message}
+          {...register('dietaryLabels')}
+        />
+
+        <CustomizationIdsMultiSelect
+          options={customizationOptions}
+          selectedIds={customizationIds}
+          onChange={setCustomizationIds}
+          disabled={customizeLoading}
+        />
+
+        <div className="flex items-center gap-3 rounded-md border p-3">
+          <Controller
+            name="isActive"
+            control={control}
+            render={({ field }) => (
+              <Switch checked={field.value} onCheckedChange={field.onChange} id="product-active" />
+            )}
+          />
+          <label htmlFor="product-active" className="text-sm font-medium">
+            Product is active {watchedIsActive ? '(visible)' : '(hidden)'}
+          </label>
+        </div>
+
         <div>
-          <label className="text-sm font-medium mb-2 block">Items Picture</label>
+          <label className="mb-2 block text-sm font-medium">
+            Image {!isEdit ? <span className="text-destructive">*</span> : null}
+          </label>
+          <p className="mb-2 text-xs text-muted-foreground">
+            {isEdit
+              ? 'Leave unchanged to keep the current image, or upload a new file to replace it.'
+              : 'Uploaded as multipart field `image` alongside JSON `data`.'}
+          </p>
           <ImageUploader value={image} onChange={(f) => setImage(f)} />
         </div>
 
@@ -299,8 +394,8 @@ export function AddEditShopProductModal({
           <Button type="button" variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Saving...' : isEdit ? 'Save' : 'Add'}
+          <Button type="submit" disabled={isSubmitting || creating || updating}>
+            {creating || updating ? 'Saving…' : isEdit ? 'Save' : 'Create'}
           </Button>
         </div>
       </form>

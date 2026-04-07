@@ -85,8 +85,16 @@ export function generateSKU(categoryPrefix: string): string {
   return `${categoryPrefix}-${timestamp}-${random}`
 }
 
-
-
+/** Server paths like `/image/foo.jpg` → full URL using API host (strip `/api/v1`). */
+export function resolveMediaUrl(path: string | undefined | null): string {
+  if (!path) return ''
+  if (path.startsWith('http://') || path.startsWith('https://')) return path
+  const base = (import.meta.env.VITE_API_BASE_URL as string | undefined) ?? ''
+  const origin = base.replace(/\/api\/v1\/?$/, '')
+  const normalized = path.startsWith('/') ? path : `/${path}`
+  if (!origin) return normalized
+  return `${origin.replace(/\/$/, '')}${normalized}`
+}
 
 
 

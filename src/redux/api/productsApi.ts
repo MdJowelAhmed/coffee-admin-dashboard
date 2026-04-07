@@ -1,33 +1,17 @@
 import { baseApi } from '../baseApi'
 import type {
-  GetStoresApiResponse,
-  StoreDataPayload,
-  StoreListResult,
-} from '../packageTypes/shop'
-
-export type GetShopsArgs = {
-  page: number
-  limit: number
-  search?: string
-}
-
-export type CreateShopArgs = {
-  data: StoreDataPayload
-  image: File
-}
-
-export type UpdateShopArgs = {
-  id: string
-  data: StoreDataPayload
-  /** Omit or pass only when replacing the image */
-  image?: File | null
-}
+  CreateProductArgs,
+  GetProductsApiResponse,
+  GetProductsArgs,
+  ProductListResult,
+  UpdateProductArgs,
+} from '../packageTypes/products'
 
 const productsApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getProducts: builder.query<ProductListResult, GetProductsArgs>({
       query: ({ page, limit, search }) => ({
-        url: '/admin/stores',
+        url: '/products',
         method: 'GET',
         params: {
           page,
@@ -35,11 +19,11 @@ const productsApi = baseApi.injectEndpoints({
           ...(search?.trim() ? { search: search.trim() } : {}),
         },
       }),
-      transformResponse: (response: GetStoresApiResponse): StoreListResult => ({
+      transformResponse: (response: GetProductsApiResponse): ProductListResult => ({
         items: response.data ?? [],
         pagination: response.pagination,
       }),
-      providesTags: ['Stores'],
+      providesTags: ['Products'],
     }),
     createProduct: builder.mutation<unknown, CreateProductArgs>({
       query: ({ data, image }) => {
@@ -47,12 +31,12 @@ const productsApi = baseApi.injectEndpoints({
         formData.append('data', JSON.stringify(data))
         formData.append('image', image)
         return {
-          url: '/admin/stores',
+          url: '/products',
           method: 'POST',
           body: formData,
         }
       },
-      invalidatesTags: ['Stores'],
+      invalidatesTags: ['Products'],
     }),
     updateProduct: builder.mutation<unknown, UpdateProductArgs>({
       query: ({ id, data, image }) => {
@@ -62,19 +46,19 @@ const productsApi = baseApi.injectEndpoints({
           formData.append('image', image)
         }
         return {
-          url: `/admin/stores/${id}`,
+          url: `/products/${id}`,
           method: 'PATCH',
           body: formData,
         }
       },
-      invalidatesTags: ['Stores'],
+      invalidatesTags: ['Products'],
     }),
     deleteProduct: builder.mutation<unknown, { id: string }>({
       query: ({ id }) => ({
-        url: `/admin/stores/${id}/soft`,
+        url: `/products/${id}/soft`,
         method: 'DELETE',
       }),
-      invalidatesTags: ['Stores'],
+      invalidatesTags: ['Products'],
     }),
   }),
 })
