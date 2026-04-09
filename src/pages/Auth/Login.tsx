@@ -17,7 +17,7 @@ import {
   logout,
 } from "@/redux/slices/authSlice";
 import { useLoginMutation, useLazyGetMyProfileQuery } from "@/redux/api/authApi";
-import { isDashboardAccessRole, normalizeApiRole } from "@/types/roles";
+import { UserRole, isDashboardAccessRole, normalizeApiRole } from "@/types/roles";
 import { profileDataToAuthUser } from "@/utils/profileToUser";
 import { readJwtPayload } from "@/utils/jwtPayload";
 import type { User } from "@/redux/slices/authSlice";
@@ -130,7 +130,15 @@ export default function Login() {
 
       dispatch(loginSuccess({ token, user }));
 
-      navigate("/", { replace: true });
+      const role = normalizeApiRole(user.role ?? "");
+      const redirectTo =
+        role === UserRole.SUPER_ADMIN
+          ? "/orders"
+          : role === UserRole.MARKETER
+            ? "/subscribers"
+            : "/orders";
+
+      navigate(redirectTo, { replace: true });
     } catch (e) {
       dispatch(logout());
       dispatch(loginFailure(getErrorMessage(e)));

@@ -46,7 +46,7 @@ export interface RoutePermission {
  * - marketer: Ad Management, Subscribers, Push-notification
  */
 export const FEATURE_ACCESS: Record<string, UserRoleValue[]> = {
-  dashboard: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER],
+  dashboard: [UserRole.SUPER_ADMIN],
   orders: [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   'shop-management': [UserRole.SUPER_ADMIN, UserRole.ADMIN],
   'shop-management-shop': [UserRole.SUPER_ADMIN],

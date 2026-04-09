@@ -40,6 +40,7 @@ import AdManagement from './pages/AdManagement/AdManagement'
 import PushNotificationList from './pages/PushNotification/PushNotificationList'
 import ControllerList from './pages/Controllers/ControllerList'
 import PrivateRoleEntry from '@/pages/Private/PrivateRoleEntry'
+import RevenueList from './pages/transictions-history/TransactionsHistory'
 
 function App() {
   const dispatch = useAppDispatch()
@@ -76,7 +77,7 @@ function App() {
           <Route
             path="dashboard"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN ]}>
                 <Dashboard />
               </RoleBasedRoute>
             }
@@ -96,11 +97,20 @@ function App() {
           <Route
             path="subscribers"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN,  UserRole.MARKETER]}>
                 <SubscriberList />
               </RoleBasedRoute>
             }
           />
+          <Route
+            path="subscribers"
+            element={
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN,  UserRole.MARKETER]}>
+                <RevenueList />
+              </RoleBasedRoute>
+            }
+          />
+         
 
           {/* Ad Management - Super Admin, Marketing */}
           <Route
@@ -116,7 +126,7 @@ function App() {
           <Route
             path="push-notification"
             element={
-              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER]}>
+              <RoleBasedRoute allowedRoles={[UserRole.SUPER_ADMIN,  UserRole.MARKETER]}>
                 <PushNotificationList />
               </RoleBasedRoute>
             }

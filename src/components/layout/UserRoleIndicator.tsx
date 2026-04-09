@@ -1,12 +1,13 @@
 import { useAppSelector } from '@/redux/hooks'
 import { getRoleDisplayName } from '@/utils/roleHelpers'
+import { selectUserRole } from '@/redux/selectors/roleBasedSelectors'
 
 export function UserRoleIndicator() {
-  const { user } = useAppSelector((state) => state.auth)
+  const role = useAppSelector(selectUserRole)
 
-  if (!user) return null
+  if (!role) return null
 
-  const displayName = getRoleDisplayName(user.role)
+  const displayName = getRoleDisplayName(role)
 
   return (
     <div className="px-3 py-2 rounded-lg border bg-muted/50">

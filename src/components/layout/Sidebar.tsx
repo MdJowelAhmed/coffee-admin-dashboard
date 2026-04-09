@@ -1,6 +1,12 @@
 import React from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
-import { hasFeatureAccess, type FeatureKey } from '@/types/roles'
+import {
+  hasFeatureAccess,
+  normalizeApiRole,
+  UserRole,
+  type FeatureKey,
+  type UserRoleValue,
+} from '@/types/roles'
 import {
   LayoutDashboard,
   Users,
@@ -26,13 +32,15 @@ import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip
 import { useAppDispatch, useAppSelector } from '@/redux/hooks'
 import { toggleSidebar } from '@/redux/slices/uiSlice'
 import { cn } from '@/utils/cn'
+import { selectUserRole } from '@/redux/selectors/roleBasedSelectors'
 
 interface NavItem {
   title: string
   href: string
   icon: React.ElementType
   feature?: FeatureKey
-  children?: (NavItem & { feature?: FeatureKey })[]
+  allowedRoles?: UserRoleValue[]
+  children?: (NavItem & { feature?: FeatureKey; allowedRoles?: UserRoleValue[] })[]
 }
 
 const navItems: NavItem[] = [
@@ -41,12 +49,14 @@ const navItems: NavItem[] = [
     href: '/dashboard',
     icon: LayoutDashboard,
     feature: 'dashboard',
+    allowedRoles: [UserRole.SUPER_ADMIN],
   },
   {
     title: 'Orders',
     href: '/orders',
     icon: ShoppingBag,
     feature: 'orders',
+    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN], 
   },
   {
     title: 'Shop Management',
@@ -58,22 +68,26 @@ const navItems: NavItem[] = [
         title: 'Customise',
         href: '/shop-management/customise',
         icon: Coffee,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN], 
       },
       {
         title: 'Category',
         href: '/shop-management/category',
         icon: Layers,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN], 
       },
       {
         title: 'Shop',
         href: '/shop-management/shop',
         icon: Store,
         feature: 'shop-management-shop',
+        allowedRoles: [UserRole.SUPER_ADMIN], 
       },
       {
         title: 'Products',
         href: '/shop-management/products',
         icon: Package,
+        allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN], 
       },
     ],
   },
@@ -99,36 +113,42 @@ const navItems: NavItem[] = [
     href: '/transactions-history',
     icon: CreditCard,
     feature: 'revenue',
+    allowedRoles: [UserRole.SUPER_ADMIN,], 
   },
   {
     title: 'User Management',
     href: '/users',
     icon: Users,
     feature: 'user-management',
+    allowedRoles: [UserRole.SUPER_ADMIN], 
   },
   {
     title: 'Subscribers',
     href: '/subscribers',
     icon: Mail,
     feature: 'subscribers',
+    allowedRoles: [UserRole.SUPER_ADMIN,  UserRole.MARKETER], 
   },
   {
     title: 'Ad Management',
     href: '/ad-management',
     icon: ImageIcon,
     feature: 'ad-management',
+    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.MARKETER], 
   },
   {
     title: 'Push Notification',
     href: '/push-notification',
     icon: Bell,
     feature: 'push-notification',
+    allowedRoles: [UserRole.SUPER_ADMIN,  UserRole.MARKETER], 
   },
   {
     title: 'Controllers',
     href: '/controllers',
     icon: ShieldCheck,
     feature: 'controllers',
+    allowedRoles: [UserRole.SUPER_ADMIN], 
   },
 ]
 
@@ -138,24 +158,28 @@ const settingsItems: NavItem[] = [
     href: '/settings/profile',
     icon: User,
     feature: 'profile',
+    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER], 
   },
   {
     title: 'Password',
     href: '/settings/password',
     icon: Lock,
     feature: 'profile',
+    allowedRoles: [UserRole.SUPER_ADMIN, UserRole.ADMIN, UserRole.MARKETER], 
   },
   {
     title: 'Terms',
     href: '/settings/terms',
     icon: FileText,
     feature: 'profile',
+    allowedRoles: [UserRole.SUPER_ADMIN], 
   },
   {
     title: 'Privacy',
     href: '/settings/privacy',
     icon: Shield,
     feature: 'profile',
+    allowedRoles: [UserRole.SUPER_ADMIN], 
   },
   // {
   //   title: 'FAQ',
@@ -164,22 +188,30 @@ const settingsItems: NavItem[] = [
   // },
 ]
 
+function roleAllows(userRole: string, allowedRoles?: UserRoleValue[]): boolean {
+  if (!allowedRoles || allowedRoles.length === 0) return true
+  const normalized = normalizeApiRole(userRole) as UserRoleValue
+  return allowedRoles.includes(normalized)
+}
+
 function filterNavByRole(items: NavItem[], userRole: string): NavItem[] {
   return items
     .map((item) => {
       if (!item.children) {
+        if (!roleAllows(userRole, item.allowedRoles)) return null
         const feature = item.feature
         if (!feature || hasFeatureAccess(userRole, feature)) return item
         return null
       }
       const filteredChildren = item.children.filter((child) => {
+        if (!roleAllows(userRole, child.allowedRoles ?? item.allowedRoles)) return false
         const childFeature = child.feature ?? item.feature
         if (!childFeature) return true
         return hasFeatureAccess(userRole, childFeature)
       })
-      const hasParentAccess = item.feature
-        ? hasFeatureAccess(userRole, item.feature)
-        : true
+      const hasParentAccess =
+        roleAllows(userRole, item.allowedRoles) &&
+        (item.feature ? hasFeatureAccess(userRole, item.feature) : true)
       if (!hasParentAccess || filteredChildren.length === 0) return null
       return { ...item, children: filteredChildren }
     })
@@ -189,10 +221,9 @@ function filterNavByRole(items: NavItem[], userRole: string): NavItem[] {
 export function Sidebar() {
   const dispatch = useAppDispatch()
   const { sidebarCollapsed } = useAppSelector((state) => state.ui)
-  const { user } = useAppSelector((state) => state.auth)
   const location = useLocation()
 
-  const userRole = user?.role ?? ''
+  const userRole = useAppSelector(selectUserRole) ?? ''
   const filteredNavItems = filterNavByRole(navItems, userRole)
   const filteredSettingsItems = filterNavByRole(settingsItems, userRole)
 
