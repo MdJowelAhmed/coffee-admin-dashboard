@@ -1,15 +1,17 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
 import { ModalWrapper, FormInput, FormSelect } from '@/components/common'
 import { Button } from '@/components/ui/button'
-import { useAppDispatch } from '@/redux/hooks'
-import { addController } from '@/redux/slices/controllerSlice'
-import type { Controller, ControllerRole, Shop } from '@/types'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Eye, EyeOff } from 'lucide-react'
+import type { ControllerRole, Shop } from '@/types'
 import { toast } from '@/utils/toast'
 import { useGetShopsQuery } from '@/redux/api/shopManagementApi'
 import { apiStoreToShop } from '@/redux/packageTypes/shop'
+import { useCreateControllerMutation } from '@/redux/api/controllersApi'
 
 const SHOP_NONE = '__none__'
 
@@ -18,7 +20,7 @@ const schema = z.object({
   email: z.string().email('Invalid email address'),
   phone: z.string().min(1, 'Phone is required'),
   password: z.string().min(6, 'Password must be at least 6 characters'),
-  role: z.enum(['admin', 'marketing']),
+  role: z.enum(['admin', 'marketer']),
   shopId: z.string().optional(),
 })
 
@@ -32,7 +34,8 @@ interface AddControllerModalProps {
 const API_BASE = import.meta.env.VITE_API_BASE_URL
 
 export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
-  const dispatch = useAppDispatch()
+  const [createController] = useCreateControllerMutation()
+  const [showPassword, setShowPassword] = useState(false)
   const { data: shopsData } = useGetShopsQuery(
     { page: 1, limit: 500 },
     { skip: !open }
@@ -86,24 +89,23 @@ export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
     }
   }, [selectedRole, setValue])
 
-  const onSubmit = (data: FormData) => {
-    const now = new Date().toISOString()
-    const shopId = data.shopId && data.shopId !== SHOP_NONE ? data.shopId : undefined
-    const shop = shopId ? shops.find((s) => s.id === shopId) : undefined
-    const payload: Controller = {
-      id: `ctrl-${Date.now()}`,
-      name: data.name,
-      email: data.email,
-      phone: data.phone,
-      role: data.role as ControllerRole,
-      shopId,
-      shopName: shop?.shopName,
-      createdAt: now,
-      updatedAt: now,
+  const onSubmit = async (data: FormData) => {
+    try {
+      const storeId =
+        data.shopId && data.shopId !== SHOP_NONE ? data.shopId : undefined
+      await createController({
+        name: data.name,
+        email: data.email,
+        phone: data.phone,
+        password: data.password,
+        role: data.role as ControllerRole,
+        ...(storeId ? { store: storeId } : {}),
+      }).unwrap()
+      toast({ title: 'Added', description: 'Controller added successfully.' })
+      onClose()
+    } catch (e) {
+      toast({ title: 'Failed', description: 'Could not add controller.', variant: 'destructive' })
     }
-    dispatch(addController(payload))
-    toast({ title: 'Added', description: 'Controller added successfully.' })
-    onClose()
   }
 
   return (
@@ -140,14 +142,35 @@ export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
           {...register('phone')}
         />
 
-        <FormInput
-          label="Password"
-          type="password"
-          placeholder="Enter password (min 6 characters)"
-          error={errors.password?.message}
-          required
-          {...register('password')}
-        />
+        <div className="space-y-1.5">
+          <Label
+            htmlFor="controller-password"
+            className={errors.password?.message ? 'text-destructive' : undefined}
+          >
+            Password<span className="text-destructive ml-1">*</span>
+          </Label>
+          <div className="relative">
+            <Input
+              id="controller-password"
+              type={showPassword ? 'text' : 'password'}
+              placeholder="Enter password (min 6 characters)"
+              className="pr-10"
+              error={!!errors.password?.message}
+              {...register('password')}
+            />
+            <button
+              type="button"
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+              onClick={() => setShowPassword((v) => !v)}
+              aria-label={showPassword ? 'Hide password' : 'Show password'}
+            >
+              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            </button>
+          </div>
+          {errors.password?.message && (
+            <p className="text-xs text-destructive">{errors.password.message}</p>
+          )}
+        </div>
 
         <FormSelect
           label="Role"
@@ -155,18 +178,18 @@ export function AddControllerModal({ open, onClose }: AddControllerModalProps) {
           onChange={(v) => setValue('role', v as ControllerRole)}
           options={[
             { value: 'admin', label: 'Admin' },
-            { value: 'marketing', label: 'Marketing' },
+            { value: 'marketer', label: 'Marketer' },
           ]}
           required
         />
 
         {showShopField && (
           <FormSelect
-            label="Shop (optional)"
+            label="Store (optional)"
             value={watch('shopId') || SHOP_NONE}
             onChange={(v) => setValue('shopId', v)}
             options={shopOptions}
-            placeholder="Select shop (optional)"
+            placeholder="Select store (optional)"
           />
         )}
 

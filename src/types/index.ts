@@ -642,7 +642,8 @@ export interface ShopProduct {
 }
 
 // ==================== Super Admin Controller Types ====================
-export type ControllerRole = 'admin' | 'marketing'
+/** API uses `marketer`, UI historically used `marketing` in some places. */
+export type ControllerRole = 'admin' | 'marketer'
 
 export interface Controller {
   id: string
@@ -652,6 +653,7 @@ export interface Controller {
   role: ControllerRole
   shopId?: string
   shopName?: string
+  status?: string
   createdAt: string
   updatedAt: string
 }
