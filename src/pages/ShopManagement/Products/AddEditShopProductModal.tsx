@@ -23,6 +23,8 @@ import type { ApiProduct, ProductFormDataPayload } from '@/redux/packageTypes/pr
 import type { SelectOption } from '@/types'
 import { toast } from '@/utils/toast'
 import { resolveMediaUrl } from '@/utils/formatters'
+import { useAppSelector } from '@/redux/hooks'
+import { UserRole } from '@/types/roles'
 
 const schema = z.object({
   name: z.string().min(1, 'Name is required'),
@@ -51,6 +53,8 @@ export function AddEditShopProductModal({
   product,
 }: AddEditShopProductModalProps) {
   const isEdit = !!editingId
+  const user = useAppSelector((state) => state.auth.user)
+  const isAdmin = user?.role === UserRole.ADMIN
   const [image, setImage] = useState<File | string | null>(null)
   const [customizationIds, setCustomizationIds] = useState<string[]>([])
 
@@ -152,6 +156,18 @@ export function AddEditShopProductModal({
     }
   }, [open, isEdit, product, reset])
 
+  useEffect(() => {
+    if (!open) return
+    if (isEdit) return
+    if (!isAdmin) return
+    if (watchedStoreId) return
+
+    const resolvedStoreId = user?.businessId || storeOptions[0]?.value || ''
+    if (resolvedStoreId) {
+      setValue('storeId', resolvedStoreId, { shouldValidate: true })
+    }
+  }, [open, isEdit, isAdmin, watchedStoreId, setValue, user?.businessId, storeOptions])
+
   const buildPayload = (data: FormData): ProductFormDataPayload => ({
     store: data.storeId,
     category: data.categoryId,
@@ -218,16 +234,26 @@ export function AddEditShopProductModal({
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          <FormSelect
-            label="Store"
-            value={watchedStoreId}
-            options={storeOptions}
-            onChange={(v) => setValue('storeId', v)}
-            placeholder={listsLoading ? 'Loading stores…' : 'Select store'}
-            error={errors.storeId?.message}
-            required
-            disabled={listsLoading}
-          />
+          {!isAdmin ? (
+            <FormSelect
+              label="Store"
+              value={watchedStoreId}
+              options={storeOptions}
+              onChange={(v) => setValue('storeId', v)}
+              placeholder={listsLoading ? 'Loading stores…' : 'Select store'}
+              error={errors.storeId?.message}
+              required
+              disabled={listsLoading}
+            />
+          ) : (
+            <FormInput
+              label="Product Name"
+              placeholder="e.g. Double Espresso"
+              error={errors.name?.message}
+              required
+              {...register('name')}
+            />
+          )}
           <FormSelect
             label="Category"
             value={watchedCategoryId}
@@ -240,13 +266,15 @@ export function AddEditShopProductModal({
           />
         </div>
 
-        <FormInput
-          label="Product Name"
-          placeholder="e.g. Double Espresso"
-          error={errors.name?.message}
-          required
-          {...register('name')}
-        />
+        {!isAdmin ? (
+          <FormInput
+            label="Product Name"
+            placeholder="e.g. Double Espresso"
+            error={errors.name?.message}
+            required
+            {...register('name')}
+          />
+        ) : null}
 
 
 
