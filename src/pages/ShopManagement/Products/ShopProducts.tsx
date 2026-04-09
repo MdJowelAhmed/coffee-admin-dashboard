@@ -12,6 +12,8 @@ import {
   useUpdateProductMutation,
 } from '@/redux/api/productsApi'
 import type { ApiProduct, ProductFormDataPayload } from '@/redux/packageTypes/products'
+import { useAppSelector } from '@/redux/hooks'
+import { UserRole } from '@/types/roles'
 import { toast } from '@/utils/toast'
 import { formatCurrency } from '@/utils/formatters'
 import { AddEditShopProductModal } from './AddEditShopProductModal'
@@ -21,9 +23,11 @@ import Loading from '@/components/common/Loading'
 function apiProductToPayload(
   p: ApiProduct,
   overrides?: Partial<ProductFormDataPayload>,
+  options?: { includeStore?: boolean },
 ): ProductFormDataPayload {
+  const includeStore = options?.includeStore ?? false
   return {
-    store: p.store._id,
+    ...(includeStore ? { store: p.store._id } : {}),
     category: p.category,
     name: p.name,
     description: p.description,
@@ -133,6 +137,9 @@ function ProductCard({
 }
 
 export default function ShopProducts() {
+  const user = useAppSelector((state) => state.auth.user)
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN
+
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(12)
   const [modalOpen, setModalOpen] = useState(false)
@@ -179,7 +186,7 @@ export default function ShopProducts() {
     try {
       await updateProduct({
         id: p._id,
-        data: apiProductToPayload(p, { isActive: !p.isActive }),
+        data: apiProductToPayload(p, { isActive: !p.isActive }, { includeStore: isSuperAdmin }),
       }).unwrap()
       toast({ title: 'Updated', description: 'Product status saved.' })
     } catch {

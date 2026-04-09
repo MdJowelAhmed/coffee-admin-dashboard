@@ -58,7 +58,8 @@ export type GetProductsArgs = {
 
 /** JSON inside FormData `data` field for POST/PATCH `/products` */
 export interface ProductFormDataPayload {
-  store: string
+  /** Only super_admin should send this; admin store is resolved from auth on the backend. */
+  store?: string
   category: string
   name: string
   description: string

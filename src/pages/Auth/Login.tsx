@@ -132,10 +132,12 @@ export default function Login() {
 
       const role = normalizeApiRole(user.role ?? "");
       const redirectTo =
-        role === UserRole.SUPER_ADMIN
-          ? "/orders"
-          : role === UserRole.MARKETER
-            ? "/subscribers"
+      role === UserRole.SUPER_ADMIN
+        ? "/dashboard"
+        : role === UserRole.MARKETER
+          ? "/subscribers"
+          : role === UserRole.ADMIN
+            ? "/orders"
             : "/orders";
 
       navigate(redirectTo, { replace: true });

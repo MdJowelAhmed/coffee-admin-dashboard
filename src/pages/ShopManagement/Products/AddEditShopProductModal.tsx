@@ -26,18 +26,22 @@ import { resolveMediaUrl } from '@/utils/formatters'
 import { useAppSelector } from '@/redux/hooks'
 import { UserRole } from '@/types/roles'
 
-const schema = z.object({
-  name: z.string().min(1, 'Name is required'),
-  description: z.string().min(1, 'Description is required'),
-  basePrice: z.number().min(0, 'Price must be 0 or more'),
-  categoryId: z.string().min(1, 'Category is required'),
-  storeId: z.string().min(1, 'Store is required'),
-  readyTime: z.number().int().min(1, 'Ready time must be at least 1 minute'),
-  isActive: z.boolean(),
-  dietaryLabels: z.string(),
-})
+function createProductFormSchema(requireStore: boolean) {
+  return z.object({
+    name: z.string().min(1, 'Name is required'),
+    description: z.string().min(1, 'Description is required'),
+    basePrice: z.number().min(0, 'Price must be 0 or more'),
+    categoryId: z.string().min(1, 'Category is required'),
+    storeId: requireStore
+      ? z.string().min(1, 'Store is required')
+      : z.string().optional(),
+    readyTime: z.number().int().min(1, 'Ready time must be at least 1 minute'),
+    isActive: z.boolean(),
+    dietaryLabels: z.string(),
+  })
+}
 
-type FormData = z.infer<typeof schema>
+type FormData = z.infer<ReturnType<typeof createProductFormSchema>>
 
 interface AddEditShopProductModalProps {
   open: boolean
@@ -54,7 +58,9 @@ export function AddEditShopProductModal({
 }: AddEditShopProductModalProps) {
   const isEdit = !!editingId
   const user = useAppSelector((state) => state.auth.user)
-  const isAdmin = user?.role === UserRole.ADMIN
+  const isSuperAdmin = user?.role === UserRole.SUPER_ADMIN
+  const formSchema = useMemo(() => createProductFormSchema(isSuperAdmin), [isSuperAdmin])
+  const resolver = useMemo(() => zodResolver(formSchema), [formSchema])
   const [image, setImage] = useState<File | string | null>(null)
   const [customizationIds, setCustomizationIds] = useState<string[]>([])
 
@@ -109,7 +115,7 @@ export function AddEditShopProductModal({
     watch,
     formState: { errors, isSubmitting },
   } = useForm<FormData>({
-    resolver: zodResolver(schema),
+    resolver,
     defaultValues: {
       name: '',
       description: '',
@@ -156,34 +162,27 @@ export function AddEditShopProductModal({
     }
   }, [open, isEdit, product, reset])
 
-  useEffect(() => {
-    if (!open) return
-    if (isEdit) return
-    if (!isAdmin) return
-    if (watchedStoreId) return
-
-    const resolvedStoreId = user?.businessId || storeOptions[0]?.value || ''
-    if (resolvedStoreId) {
-      setValue('storeId', resolvedStoreId, { shouldValidate: true })
+  const buildPayload = (data: FormData): ProductFormDataPayload => {
+    const base: ProductFormDataPayload = {
+      category: data.categoryId,
+      name: data.name,
+      description: data.description,
+      basePrice: data.basePrice,
+      readyTime: data.readyTime,
+      isActive: data.isActive,
+      dietaryLabels: data.dietaryLabels
+        ? data.dietaryLabels
+          .split(',')
+          .map((s) => s.trim())
+          .filter(Boolean)
+        : [],
+      customizationIds: customizationIds.filter(Boolean),
     }
-  }, [open, isEdit, isAdmin, watchedStoreId, setValue, user?.businessId, storeOptions])
-
-  const buildPayload = (data: FormData): ProductFormDataPayload => ({
-    store: data.storeId,
-    category: data.categoryId,
-    name: data.name,
-    description: data.description,
-    basePrice: data.basePrice,
-    readyTime: data.readyTime,
-    isActive: data.isActive,
-    dietaryLabels: data.dietaryLabels
-      ? data.dietaryLabels
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean)
-      : [],
-    customizationIds: customizationIds.filter(Boolean),
-  })
+    if (isSuperAdmin && data.storeId) {
+      base.store = data.storeId
+    }
+    return base
+  }
 
   const onSubmit = async (data: FormData) => {
     if (!isEdit && !(image instanceof File)) {
@@ -234,10 +233,10 @@ export function AddEditShopProductModal({
     >
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-          {!isAdmin ? (
+          {isSuperAdmin ? (
             <FormSelect
               label="Store"
-              value={watchedStoreId}
+              value={watchedStoreId ?? ''}
               options={storeOptions}
               onChange={(v) => setValue('storeId', v)}
               placeholder={listsLoading ? 'Loading stores…' : 'Select store'}
@@ -266,7 +265,7 @@ export function AddEditShopProductModal({
           />
         </div>
 
-        {!isAdmin ? (
+        {isSuperAdmin ? (
           <FormInput
             label="Product Name"
             placeholder="e.g. Double Espresso"
