@@ -272,7 +272,7 @@ export default function ShopList() {
             </p> */}
           </div>
           <div className="flex flex-wrap items-center gap-2">
-            <SearchInput
+            {/* <SearchInput
               value={searchTerm}
               onChange={(v) => {
                 setSearchTerm(v)
@@ -281,7 +281,7 @@ export default function ShopList() {
               placeholder="Search shops…"
               debounceMs={400}
               className="w-[200px] md:w-[260px]"
-            />
+            /> */}
             <Button onClick={handleAdd} className="bg-primary text-white">
               <Plus className="h-4 w-4 mr-2" />
               Add Shop

@@ -35,7 +35,7 @@ export default function OrderList() {
   const { data, isLoading, isFetching, isError, error } = useGetOrdersQuery({
     page: currentPage,
     limit: itemsPerPage,
-    search: searchQuery || undefined,
+    searchTerm: searchQuery || undefined,
     orderStatus: statusFilter,
   })
 
@@ -79,12 +79,12 @@ export default function OrderList() {
             Orders
           </CardTitle>
           <div className="flex items-center gap-3">
-            <SearchInput
+            {/* <SearchInput
               value={searchQuery}
               onChange={setSearchQuery}
               placeholder="Search order id or status…"
               className="w-[300px]"
-            />
+            /> */}
             <OrderFilterDropdown
               value={statusFilter}
               onChange={setStatusFilter}

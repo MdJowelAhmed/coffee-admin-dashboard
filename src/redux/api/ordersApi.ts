@@ -4,20 +4,20 @@ import type { GetOrdersApiResponse, OrdersListResult } from '../packageTypes/ord
 export type GetOrdersArgs = {
   page: number
   limit: number
-  search?: string
+  searchTerm?: string
   orderStatus?: string
 }
 
 const ordersApi = baseApi.injectEndpoints({
   endpoints: (builder) => ({
     getOrders: builder.query<OrdersListResult, GetOrdersArgs>({
-      query: ({ page, limit, search, orderStatus }) => ({
+      query: ({ page, limit, searchTerm, orderStatus }) => ({
         url: '/admin/orders',
         method: 'GET',
         params: {
           page,
           limit,
-          ...(search?.trim() ? { search: search.trim() } : {}),
+          ...(searchTerm?.trim() ? { searchTerm: searchTerm.trim() } : {}),
           ...(orderStatus && orderStatus !== 'all'
             ? { orderStatus }
             : {}),
