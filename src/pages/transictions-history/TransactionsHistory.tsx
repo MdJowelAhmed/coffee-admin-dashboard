@@ -74,7 +74,7 @@ export default function RevenueList() {
               Could not load revenue. Please try again.
             </div>
           ) : null}
-          {!isFetching && items.length === 0 ? (
+          {!isFetching && !isError ? (
             <RevenueTable items={items} />
           ) : null}
 
