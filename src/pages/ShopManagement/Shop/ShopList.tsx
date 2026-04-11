@@ -4,7 +4,7 @@ import { MapPin, Phone, Clock, Plus, CalendarOff } from 'lucide-react'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Switch } from '@/components/ui/switch'
-import { Pagination, ConfirmDialog, SearchInput } from '@/components/common'
+import { Pagination, ConfirmDialog,  } from '@/components/common'
 import type { Shop } from '@/types'
 import { toast } from '@/utils/toast'
 import { DEFAULT_PAGINATION } from '@/utils/constants'
@@ -138,7 +138,7 @@ function ShopCard({
 export default function ShopList() {
   const [page, setPage] = useState(1)
   const [limit, setLimit] = useState(DEFAULT_PAGINATION.limit)
-  const [searchTerm, setSearchTerm] = useState('')
+  // const [searchTerm, setSearchTerm] = useState('')
 
   const [modalOpen, setModalOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
@@ -153,7 +153,7 @@ export default function ShopList() {
   const { data, isLoading, isFetching, error } = useGetShopsQuery({
     page,
     limit,
-    searchTerm: searchTerm.trim() || undefined,
+    // searchTerm: searchTerm.trim() || undefined,
   })
 
   const shops: Shop[] = useMemo(

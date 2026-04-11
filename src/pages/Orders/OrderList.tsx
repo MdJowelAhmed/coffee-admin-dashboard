@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { motion } from 'framer-motion'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { SearchInput } from '@/components/common/SearchInput'
+// import { SearchInput } from '@/components/common/SearchInput'
 import { Pagination } from '@/components/common/Pagination'
 import { OrderFilterDropdown } from './components/OrderFilterDropdown'
 import { OrderTable } from './components/OrderTable'
@@ -18,7 +18,7 @@ export default function OrderList() {
   const [isStatusModalOpen, setIsStatusModalOpen] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<AdminOrder | null>(null)
 
-  const [searchQuery, setSearchQuery] = useUrlString('search', '')
+  // const [searchQuery, setSearchQuery] = useUrlString('search', '')
   const [statusFilter, setStatusFilter] = useUrlString('status', 'all')
   const [currentPage, setCurrentPage] = useUrlNumber('page', 1)
   const [itemsPerPage, setItemsPerPage] = useUrlNumber('limit', 10)
@@ -30,12 +30,12 @@ export default function OrderList() {
       return
     }
     setCurrentPage(1)
-  }, [searchQuery, statusFilter, setCurrentPage])
+  }, [ statusFilter, setCurrentPage])
 
   const { data, isLoading, isFetching, isError, error } = useGetOrdersQuery({
     page: currentPage,
     limit: itemsPerPage,
-    searchTerm: searchQuery || undefined,
+    // searchTerm: searchQuery || undefined,
     orderStatus: statusFilter,
   })
 
