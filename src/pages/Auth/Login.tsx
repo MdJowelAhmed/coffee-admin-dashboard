@@ -266,7 +266,7 @@ export default function Login() {
         </Button>
       </form>
 
-      <div className="relative">
+      {/* <div className="relative">
         <Separator />
         <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-background px-2 text-xs text-muted-foreground">
           Access
@@ -277,7 +277,7 @@ export default function Login() {
         Allowed roles: <span className="font-mono">super_admin</span>,{" "}
         <span className="font-mono">admin</span>,{" "}
         <span className="font-mono">marketer</span> (from your account profile).
-      </p>
+      </p> */}
     </div>
   );
 }
