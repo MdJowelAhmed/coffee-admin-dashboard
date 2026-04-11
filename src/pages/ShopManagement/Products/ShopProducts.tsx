@@ -227,10 +227,10 @@ export default function ShopProducts() {
         <CardHeader className="flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-xl font-bold text-slate-800">Shop products</CardTitle>
-            <p className="mt-1 text-sm text-muted-foreground">
+            {/* <p className="mt-1 text-sm text-muted-foreground">
               Create and edit products with multipart <code className="text-xs">data</code> +{' '}
               <code className="text-xs">image</code>; link customization types by ID.
-            </p>
+            </p> */}
           </div>
           <Button onClick={handleAdd} className="bg-primary text-white">
             <Plus className="mr-2 h-4 w-4" />

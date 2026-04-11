@@ -267,9 +267,9 @@ export default function ShopList() {
             <CardTitle className="text-xl font-bold text-slate-800">
               Shops
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            {/* <p className="text-sm text-muted-foreground mt-1">
               Manage stores: name, contact, address, hours, and image
-            </p>
+            </p> */}
           </div>
           <div className="flex flex-wrap items-center gap-2">
             <SearchInput

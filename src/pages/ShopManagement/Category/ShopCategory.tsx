@@ -162,9 +162,9 @@ export default function ShopCategory() {
             <CardTitle className="text-xl font-bold text-slate-800">
               Shop Category
             </CardTitle>
-            <p className="text-sm text-muted-foreground mt-1">
+            {/* <p className="text-sm text-muted-foreground mt-1">
               Manage categories (name, status, created/updated time)
-            </p>
+            </p> */}
           </div>
           <Button onClick={handleAdd} className="bg-primary text-white">
             <Plus className="h-4 w-4 mr-2" />

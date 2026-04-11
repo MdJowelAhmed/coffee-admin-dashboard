@@ -207,9 +207,9 @@ export default function Customise() {
       <Card className="border-0 bg-white shadow-sm">
         <CardContent className="pt-6">
           <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
-            <p className="text-sm text-gray-600">
+            {/* <p className="text-sm text-gray-600">
               Tabs match customization types from your API. Add types, then add options under each type.
-            </p>
+            </p> */}
           </div>
 
           {showEmpty ? (
